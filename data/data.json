@@ -1,0 +1,19 @@
+{
+    "users": [
+        {
+            "name": "John Doe",
+            "age": 30,
+            "email": "johndoe@gmail.com"
+        },
+        {
+            "name": "Jane Smith",
+            "age": 25,
+            "email": "janesmith@gmail.com"
+        },
+        {
+            "name": "test",
+            "age": 22,
+            "email": "test@gmail.com"
+        }
+    ]
+}

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD JS Project</title>
+    <link rel="stylesheet" href="styles/reset.css">
+    <link rel="stylesheet" href="styles/style.css">
+</head>
+
+<body>
+    <header>
+        <h1>CRUD JS Project</h1>
+    </header>
+    <main>
+        <section class="users" id="users">
+            <h2>Users</h2>
+        </section>
+        <section class="create-user" id="create-user">
+            <h2>Create User</h2>
+            <form id="create-user-form">
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" required>
+                <label for="age">Age:</label>
+                <input type="number" id="age" name="age" required>
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+                <button type="submit">Create</button>
+            </form>
+        </section>
+        <section class="update-user" id="update-user">
+            <h2>Update User</h2>
+        </section>
+        <section class="delete-user" id="delete-user">
+            <h2>Delete User</h2>
+        </section>
+    </main>
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>
