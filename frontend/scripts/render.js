@@ -9,12 +9,16 @@ export async function renderUsers(apiUrl) {
     users.forEach(user => {
         const userDiv = document.createElement('div');
 
-        userDiv.classList.add('user');
+        userDiv.classList.add('col-md-3');
 
         userDiv.innerHTML = `
-            <p>Name: ${user.name}</p>
-            <p>Age: ${user.age}</p>
-            <p>Email: ${user.email}</p>
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">${user.name}</h5>
+                    <p class="card-text mb-1"><strong>Age:</strong> ${user.age}</p>
+                    <p class="card-text"><strong>Email:</strong> ${user.email}</p>
+                </div>
+            </div>
         `;
 
         usersSection.appendChild(userDiv);

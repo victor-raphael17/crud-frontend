@@ -1,14 +1,4 @@
 body {
-    height: 100vh;
-}
-
-h1 {
-    text-align: center;
-    margin: 20px;
-}
-
-.users {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    align-items: center;
+    min-height: 100vh;
+    background-color: #f8f9fa;
 }
