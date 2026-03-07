@@ -1,8 +1,13 @@
-import { getUsers } from './utils/read.js';
+import { getUsers } from '../api/read.js';
 
 export async function renderUsers(apiUrl) {
     const users = await getUsers(apiUrl);
     const usersSection = document.getElementById('users');
+
+    if (users.length === 0) {
+        usersSection.innerHTML = '<p>No users found.</p>';
+        return;
+    }
 
     usersSection.innerHTML = '';
 

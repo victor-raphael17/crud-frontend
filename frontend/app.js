@@ -1,5 +1,5 @@
-import { renderUsers } from './scripts/render.js';
-import { createUser } from './scripts/utils/create.js';
+import { renderUsers } from './scripts/dom/render.js';
+import { createUser } from './scripts/api/create.js';
 
 const apiUrl = 'http://localhost:8000/api/users';
 
@@ -11,6 +11,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    await createUser(apiUrl);
+
+    const name = document.getElementById('name').value;
+    const age = document.getElementById('age').value;
+    const email = document.getElementById('email').value;
+
+    await createUser(apiUrl, { name, age, email });
+    await renderUsers(apiUrl);
     form.reset();
 });

@@ -1,3 +1,9 @@
 {
-    "users": []
+    "users": [
+        {
+            "name": "Victor Raphael",
+            "age": 24,
+            "email": "vitel@gmail.com"
+        }
+    ]
 }
