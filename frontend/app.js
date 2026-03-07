@@ -1,7 +1,7 @@
-import { renderUsers } from './scripts/read.js';
+import { renderUsers } from './scripts/render.js';
 import { createUser } from './scripts/create.js';
 
-const apiUrl = 'http://localhost:8000/api';
+const apiUrl = 'http://localhost:8000/api/users';
 
 const form = document.getElementById('create-user-form');
 
