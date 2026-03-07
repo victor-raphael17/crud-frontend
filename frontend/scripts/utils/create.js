@@ -1,4 +1,4 @@
-import { renderUsers } from './utils/render.js';
+import { renderUsers } from '../render.js';
 
 export async function createUser(apiUrl) {
     const name = document.getElementById('name').value,

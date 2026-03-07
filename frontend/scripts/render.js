@@ -1,4 +1,4 @@
-import { getUsers } from '../read.js';
+import { getUsers } from './utils/read.js';
 
 export async function renderUsers(apiUrl) {
     const users = await getUsers(apiUrl);

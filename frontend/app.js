@@ -1,5 +1,5 @@
-import { renderUsers } from './scripts/utils/render.js';
-import { createUser } from './scripts/create.js';
+import { renderUsers } from './scripts/render.js';
+import { createUser } from './scripts/utils/create.js';
 
 const apiUrl = 'http://localhost:8000/api/users';
 
