@@ -12,11 +12,15 @@ document.addEventListener('DOMContentLoaded', () => {
 form.addEventListener('submit', async (event) => {
     event.preventDefault();
 
-    const name = document.getElementById('name').value;
-    const age = document.getElementById('age').value;
-    const email = document.getElementById('email').value;
+    const name = document.getElementById('name').value,
+        age = document.getElementById('age').value,
+        email = document.getElementById('email').value;
 
-    await createUser(apiUrl, { name, age, email });
-    await renderUsers(apiUrl);
-    form.reset();
+    try {
+        await createUser(apiUrl, { name, age, email });
+        await renderUsers(apiUrl);
+        form.reset();
+    } catch (error) {
+        alert(error.message);
+    }
 });
