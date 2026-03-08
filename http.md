@@ -21,6 +21,116 @@ As chaves que começam com `HTTP_` vêm dos **headers da requisição**. As dema
 
 ---
 
+# `match` — o switch moderno do PHP 8
+
+O `match` é uma **expressão** introduzida no PHP 8 que substitui o `switch` de forma mais limpa e segura.
+
+## Sintaxe básica
+
+```php
+match ($valor) {
+    'A' => fazerAlgo(),
+    'B', 'C' => fazerOutraCoisa(),   // múltiplos valores no mesmo arm
+    default => fallback(),
+};
+```
+
+## Por que usar `match` em vez de `switch`?
+
+### 1. Sem `break` — sem bugs acidentais
+
+No `switch`, se você esquece o `break`, o código "cai" pro próximo case (fall-through):
+
+```php
+// switch — perigoso se esquecer o break
+switch ($method) {
+    case 'GET':
+        handleGet();
+        // esqueceu o break!
+    case 'POST':
+        handlePost();  // ← executa isso TAMBÉM quando é GET
+        break;
+}
+
+// match — não tem fall-through, impossível dar esse bug
+match ($method) {
+    'GET' => handleGet(),
+    'POST' => handlePost(),
+};
+```
+
+### 2. Comparação estrita (`===`) por padrão
+
+O `switch` usa comparação frouxa (`==`), o `match` usa estrita (`===`):
+
+```php
+$status = 0;
+
+// switch (==) — BUG: 0 == 'active' é true em PHP
+switch ($status) {
+    case 'active': echo 'ativo';  // ← executa! 0 == 'active' é true
+}
+
+// match (===) — correto: 0 === 'active' é false
+match ($status) {
+    'active' => 'ativo',  // ← não executa, como esperado
+};
+```
+
+### 3. É uma expressão — retorna valor
+
+```php
+// Pode atribuir direto a uma variável
+$label = match ($method) {
+    'GET' => 'Buscar',
+    'POST' => 'Criar',
+    default => 'Desconhecido',
+};
+```
+
+### 4. Erro se nenhum caso bater (sem `default`)
+
+Se nenhum arm bater e não tiver `default`, o `match` lança um `UnhandledMatchError`.
+O `switch` simplesmente ignora e continua — o que pode esconder bugs.
+
+## Por que extraímos funções?
+
+Cada arm do `match` aceita apenas **uma expressão** (uma chamada de função, um valor, etc.).
+Não dá pra colocar múltiplas linhas de código direto num arm:
+
+```php
+// ❌ Não funciona — match não aceita blocos de código
+match ($method) {
+    'GET' => {
+        $json = file_get_contents($dataFile);
+        echo $json;
+    },
+};
+
+// ✅ Funciona — extraí a lógica pra uma função
+match ($method) {
+    'GET' => handleGet($dataFile),
+};
+```
+
+Por isso cada método HTTP virou uma função separada (`handleGet`, `handlePost`, etc.),
+e o `match` só faz o **despacho** — decidir qual função chamar.
+
+## Estrutura final do `api.php`
+
+```php
+match ($method) {
+    'GET' => handleGet($dataFile),
+    'POST' => handlePost($dataFile),
+    'PUT' => handlePut($dataFile),
+    'PATCH' => handlePatch($dataFile),
+    'DELETE' => handleDelete($dataFile),
+    default => handleMethodNotAllowed(),
+};
+```
+
+---
+
 # Métodos HTTP — Frontend (JS) + Backend (PHP)
 
 O fluxo é sempre o mesmo:
@@ -88,10 +198,15 @@ const data = await response.json();
 ### Backend (PHP)
 
 ```php
-case 'GET':
+// No match:
+'GET' => handleGet($dataFile),
+
+// A função:
+function handleGet(string $dataFile): void
+{
     $json = file_get_contents($dataFile);
     echo $json;
-    break;
+}
 ```
 
 #### Quebrando linha por linha:
@@ -156,7 +271,12 @@ const created = await response.json(); // resposta do servidor
 ### Backend (PHP)
 
 ```php
-case 'POST':
+// No match:
+'POST' => handlePost($dataFile),
+
+// A função:
+function handlePost(string $dataFile): void
+{
     $input = json_decode(file_get_contents('php://input'), true);
 ```
 
@@ -239,11 +359,11 @@ json_decode(..., true):            ['name' => 'João', 'age' => 25]  ← array P
     $data['users'][] = $newUser;
 
     // Salva no arquivo
-    file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT));
+    file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
     http_response_code(201); // 201 = Created
     echo json_encode($newUser);
-    break;
+}
 ```
 
 **Notas:**
@@ -305,7 +425,12 @@ body: JSON.stringify({ name: "Victor", age: 25, email: "victor@email.com" })
 ### Backend (PHP)
 
 ```php
-case 'PUT':
+// No match:
+'PUT' => handlePut($dataFile),
+
+// A função:
+function handlePut(string $dataFile): void
+{
     $input = json_decode(file_get_contents('php://input'), true);
     $index = $_GET['index'] ?? null;
 ```
@@ -380,10 +505,10 @@ PUT /api/users?index=0 + body completo → 200 ✓
         'email' => $input['email'],
     ];
 
-    file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT));
+    file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
     echo json_encode($data['users'][$index]);
-    break;
+}
 ```
 
 #### `(int) $input['age']` — por que o cast?
@@ -461,7 +586,12 @@ PATCH é como dizer "muda só a idade, o resto nem encosta".
 ### Backend (PHP)
 
 ```php
-case 'PATCH':
+// No match:
+'PATCH' => handlePatch($dataFile),
+
+// A função:
+function handlePatch(string $dataFile): void
+{
     $input = json_decode(file_get_contents('php://input'), true);
     $index = $_GET['index'] ?? null;
 
@@ -520,10 +650,10 @@ $data['users'][$index] = array_merge($data['users'][$index], $input);
 ---
 
 ```php
-    file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT));
+    file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
     echo json_encode($data['users'][$index]);
-    break;
+}
 ```
 
 O padrão é sempre o mesmo: salva no arquivo → devolve o resultado pro frontend.
@@ -565,7 +695,12 @@ fetch('http://localhost:8000/api/users', {
 ### Backend (PHP)
 
 ```php
-case 'DELETE':
+// No match:
+'DELETE' => handleDelete($dataFile),
+
+// A função:
+function handleDelete(string $dataFile): void
+{
     $index = $_GET['index'] ?? null;
 ```
 
@@ -629,10 +764,10 @@ Se usasse `unset`, quando salvar no JSON os índices quebram e viram chaves de o
 ---
 
 ```php
-    file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT));
+    file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
     echo json_encode(['deleted' => $removed]);
-    break;
+}
 ```
 
 #### Por que retorna o usuário deletado?
@@ -692,7 +827,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 #### Por que fica no `router.php` e não no `api.php`?
 
 Porque o preflight precisa ser respondido **antes de qualquer processamento**. Se o OPTIONS chegasse
-no `api.php`, iria entrar no `switch` e cair no `default` com erro 405. O router intercepta antes:
+no `api.php`, iria entrar no `match` e cair no `default` com erro 405. O router intercepta antes:
 
 ```
 Requisição chega
