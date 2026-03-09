@@ -21,7 +21,7 @@
             <div class="row g-3" id="users"></div>
         </section>
         <section class="card p-4">
-            <h2 class="mb-3">Create User</h2>
+            <h2 class="mb-3" id="form-title">Create User</h2>
             <form id="create-user-form" class="row g-3 align-items-end">
                 <div class="col-md-4">
                     <label for="name" class="form-label">Name</label>
@@ -35,8 +35,9 @@
                     <label for="email" class="form-label">Email</label>
                     <input type="email" class="form-control" id="email" name="email" required>
                 </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-dark w-100">Create</button>
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-dark flex-fill">Create</button>
+                    <button type="button" id="cancel-edit" class="btn btn-outline-secondary" style="display:none;">Cancel</button>
                 </div>
             </form>
         </section>

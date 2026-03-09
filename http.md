@@ -545,6 +545,45 @@ Com `JSON_PRETTY_PRINT`, fica formatado e legível:
 
 Não muda nada pro código — é só pra humanos conseguirem ler o arquivo `data.json`.
 
+#### `JSON_UNESCAPED_UNICODE` — não escapa acentos
+
+Sem essa flag, o PHP escapa caracteres especiais (acentos, ç, etc.) pra códigos Unicode:
+
+```php
+$data = ['name' => 'João'];
+
+json_encode($data);
+// '{"name":"Jo\u00e3o"}'   ← "ã" virou \u00e3
+
+json_encode($data, JSON_UNESCAPED_UNICODE);
+// '{"name":"João"}'         ← "ã" ficou como "ã"
+```
+
+Os dois são JSON válido — `\u00e3` e `ã` significam a mesma coisa pro computador. Mas pra um humano lendo o `data.json`, `João` é bem mais legível que `Jo\u00e3o`.
+
+#### O `|` — combinando flags (bitwise OR)
+
+O `|` é o operador **bitwise OR**. É assim que o PHP combina múltiplas opções numa única variável:
+
+```php
+// Uma flag só:
+json_encode($data, JSON_PRETTY_PRINT);
+
+// Duas flags juntas:
+json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+```
+
+Por baixo dos panos, cada flag é um número com um bit diferente ligado:
+
+```
+JSON_PRETTY_PRINT       = 128  = 010000000
+JSON_UNESCAPED_UNICODE  = 256  = 100000000
+                            |  (OR)
+Resultado               = 384  = 110000000
+```
+
+O `json_encode` recebe esse número e verifica quais bits estão ligados pra saber quais opções você ativou. É um padrão comum em C/PHP — não precisa entender os bits, só saber que **`|` combina flags**.
+
 ---
 
 ## PATCH — Atualizar dados (parcial)

@@ -4,6 +4,23 @@ $dataFile = __DIR__ . '/../data/data.json';
 
 $method = $_SERVER['REQUEST_METHOD'];
 
+function validateRequiredFields(array $input, array $fields): ?string
+{
+    $missing = [];
+
+    foreach ($fields as $field) {
+        if (!isset($input[$field])) {
+            $missing[] = $field;
+        }
+    }
+
+    if (!empty($missing)) {
+        return implode(', ', $missing) . ' are required';
+    }
+
+    return null;
+}
+
 function handleGet(string $dataFile): void
 {
     $json = file_get_contents($dataFile);
@@ -14,9 +31,11 @@ function handlePost(string $dataFile): void
 {
     $input = json_decode(file_get_contents('php://input'), true);
 
-    if (!isset($input['name']) || !isset($input['age'])) {
+    $error = validateRequiredFields($input, ['name', 'age', 'email']);
+
+    if ($error) {
         http_response_code(400);
-        echo json_encode(['error' => 'Name and age are required']);
+        echo json_encode(['error' => $error]);
         exit;
     }
 
@@ -42,9 +61,17 @@ function handlePut(string $dataFile): void
     $input = json_decode(file_get_contents('php://input'), true);
     $index = $_GET['index'] ?? null;
 
-    if ($index === null || !isset($input['name']) || !isset($input['age'])) {
+    if ($index === null) {
         http_response_code(400);
-        echo json_encode(['error' => 'Index, name and age are required']);
+        echo json_encode(['error' => 'Index is required']);
+        exit;
+    }
+
+    $error = validateRequiredFields($input, ['name', 'age', 'email']);
+
+    if ($error) {
+        http_response_code(400);
+        echo json_encode(['error' => $error]);
         exit;
     }
 
