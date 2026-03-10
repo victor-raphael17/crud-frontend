@@ -1,12 +1,22 @@
 <?php
 
-require_once __DIR__ . '/validation.php';
-require_once __DIR__ . '/data.php';
+require_once __DIR__ . '/services.php';
+
+function respond(array $result): void
+{
+    http_response_code($result['status']);
+
+    if (isset($result['error'])) {
+        echo json_encode(['error' => $result['error']]);
+    } else {
+        echo json_encode($result['data']);
+    }
+}
 
 function handleGet(string $dataFile): void
 {
     try {
-        echo json_encode(getUsers($dataFile));
+        echo json_encode(getAllUsers($dataFile));
     } catch (\Throwable $e) {
         http_response_code(500);
         echo json_encode(['error' => 'Internal server error']);
@@ -15,37 +25,9 @@ function handleGet(string $dataFile): void
 
 function handlePost(string $dataFile): void
 {
-    $input = json_decode(file_get_contents('php://input'), true);
-
-    if (!is_array($input)) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Invalid JSON body']);
-        exit;
-    }
-
-    $error = validateRequiredFields($input, ['name', 'age', 'email']);
-
-    if ($error) {
-        http_response_code(400);
-        echo json_encode(['error' => $error]);
-        exit;
-    }
-
     try {
-        $data = getUsers($dataFile);
-
-        $newUser = [
-            'name' => $input['name'],
-            'age' => (int) $input['age'],
-            'email' => $input['email'],
-        ];
-
-        $data['users'][] = $newUser;
-
-        saveUsers($dataFile, $data);
-
-        http_response_code(201);
-        echo json_encode($newUser);
+        $input = json_decode(file_get_contents('php://input'), true);
+        respond(createUser($dataFile, $input));
     } catch (\Throwable $e) {
         http_response_code(500);
         echo json_encode(['error' => 'Internal server error']);
@@ -54,47 +36,10 @@ function handlePost(string $dataFile): void
 
 function handlePut(string $dataFile): void
 {
-    $input = json_decode(file_get_contents('php://input'), true);
-    $index = $_GET['index'] ?? null;
-
-    if ($index === null) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Index is required']);
-        exit;
-    }
-
-    if (!is_array($input)) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Invalid JSON body']);
-        exit;
-    }
-
-    $error = validateRequiredFields($input, ['name', 'age', 'email']);
-
-    if ($error) {
-        http_response_code(400);
-        echo json_encode(['error' => $error]);
-        exit;
-    }
-
     try {
-        $data = getUsers($dataFile);
-
-        if (!isset($data['users'][$index])) {
-            http_response_code(404);
-            echo json_encode(['error' => 'User not found']);
-            exit;
-        }
-
-        $data['users'][$index] = [
-            'name' => $input['name'],
-            'age' => (int) $input['age'],
-            'email' => $input['email'],
-        ];
-
-        saveUsers($dataFile, $data);
-
-        echo json_encode($data['users'][$index]);
+        $input = json_decode(file_get_contents('php://input'), true);
+        $id = isset($_GET['id']) ? (int) $_GET['id'] : null;
+        respond(editUser($dataFile, $id, $input));
     } catch (\Throwable $e) {
         http_response_code(500);
         echo json_encode(['error' => 'Internal server error']);
@@ -103,35 +48,10 @@ function handlePut(string $dataFile): void
 
 function handlePatch(string $dataFile): void
 {
-    $input = json_decode(file_get_contents('php://input'), true);
-    $index = $_GET['index'] ?? null;
-
-    if ($index === null) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Index is required']);
-        exit;
-    }
-
-    if (!is_array($input)) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Invalid JSON body']);
-        exit;
-    }
-
     try {
-        $data = getUsers($dataFile);
-
-        if (!isset($data['users'][$index])) {
-            http_response_code(404);
-            echo json_encode(['error' => 'User not found']);
-            exit;
-        }
-
-        $data['users'][$index] = array_merge($data['users'][$index], $input);
-
-        saveUsers($dataFile, $data);
-
-        echo json_encode($data['users'][$index]);
+        $input = json_decode(file_get_contents('php://input'), true);
+        $id = isset($_GET['id']) ? (int) $_GET['id'] : null;
+        respond(editUser($dataFile, $id, $input, partial: true));
     } catch (\Throwable $e) {
         http_response_code(500);
         echo json_encode(['error' => 'Internal server error']);
@@ -140,29 +60,9 @@ function handlePatch(string $dataFile): void
 
 function handleDelete(string $dataFile): void
 {
-    $index = $_GET['index'] ?? null;
-
-    if ($index === null) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Index is required']);
-        exit;
-    }
-
     try {
-        $data = getUsers($dataFile);
-
-        if (!isset($data['users'][$index])) {
-            http_response_code(404);
-            echo json_encode(['error' => 'User not found']);
-            exit;
-        }
-
-        $removed = $data['users'][$index];
-        array_splice($data['users'], $index, 1);
-
-        saveUsers($dataFile, $data);
-
-        echo json_encode(['deleted' => $removed]);
+        $id = isset($_GET['id']) ? (int) $_GET['id'] : null;
+        respond(removeUser($dataFile, $id));
     } catch (\Throwable $e) {
         http_response_code(500);
         echo json_encode(['error' => 'Internal server error']);

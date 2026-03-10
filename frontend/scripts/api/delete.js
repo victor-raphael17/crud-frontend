@@ -1,5 +1,5 @@
-export async function deleteUser(apiUrl, index) {
-    const response = await fetch(`${apiUrl}?index=${index}`, {
+export async function deleteUser(apiUrl, id) {
+    const response = await fetch(`${apiUrl}?id=${id}`, {
         method: 'DELETE',
     });
 

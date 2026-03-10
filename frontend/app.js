@@ -1,6 +1,6 @@
 import { renderUsers } from './scripts/dom/render.js';
 import { createUser } from './scripts/api/create.js';
-import { updateUser } from './scripts/api/update.js';
+import { updateUser, patchUser } from './scripts/api/update.js';
 import { deleteUser } from './scripts/api/delete.js';
 
 const apiUrl = 'http://localhost:8000/api/users';
@@ -10,10 +10,24 @@ const formTitle = document.getElementById('form-title');
 const submitBtn = form.querySelector('button[type="submit"]');
 const cancelBtn = document.getElementById('cancel-edit');
 
-let editingIndex = null;
+const formError = document.getElementById('form-error');
 
-function enterEditMode(index, user) {
-    editingIndex = index;
+let editingId = null;
+let originalUser = null;
+
+function showError(message) {
+    formError.textContent = message;
+    formError.classList.remove('d-none');
+}
+
+function hideError() {
+    formError.classList.add('d-none');
+    formError.textContent = '';
+}
+
+function enterEditMode(id, user) {
+    editingId = id;
+    originalUser = { ...user };
     document.getElementById('name').value = user.name;
     document.getElementById('age').value = user.age;
     document.getElementById('email').value = user.email;
@@ -24,7 +38,8 @@ function enterEditMode(index, user) {
 }
 
 function exitEditMode() {
-    editingIndex = null;
+    editingId = null;
+    originalUser = null;
     formTitle.textContent = 'Create User';
     submitBtn.textContent = 'Create';
     cancelBtn.style.display = 'none';
@@ -34,15 +49,15 @@ function exitEditMode() {
 function refreshUsers() {
     renderUsers(apiUrl, {
         onEdit: enterEditMode,
-        onDelete: async (index) => {
+        onDelete: async (id) => {
             if (!confirm('Are you sure you want to delete this user?')) return;
 
             try {
-                deleteUser(apiUrl, index);
-                if (editingIndex === index) exitEditMode();
+                await deleteUser(apiUrl, id);
+                if (editingId === id) exitEditMode();
                 refreshUsers();
             } catch (error) {
-                alert(error.message);
+                showError(error.message);
             }
         },
     });
@@ -59,16 +74,33 @@ form.addEventListener('submit', async (event) => {
     const age = document.getElementById('age').value;
     const email = document.getElementById('email').value;
 
+    hideError();
+
     try {
-        if (editingIndex !== null) {
-            updateUser(apiUrl, editingIndex, { name, age, email });
+        if (editingId !== null) {
+            const changed = {};
+            if (name !== originalUser.name) changed.name = name;
+            if (Number(age) !== originalUser.age) changed.age = age;
+            if (email !== originalUser.email) changed.email = email;
+
+            if (Object.keys(changed).length === 0) {
+                exitEditMode();
+                return;
+            }
+
+            const allChanged = Object.keys(changed).length === 3;
+            if (allChanged) {
+                await updateUser(apiUrl, editingId, { name, age, email });
+            } else {
+                await patchUser(apiUrl, editingId, changed);
+            }
         } else {
-            createUser(apiUrl, { name, age, email });
+            await createUser(apiUrl, { name, age, email });
         }
 
         exitEditMode();
         refreshUsers();
     } catch (error) {
-        alert(error.message);
+        showError(error.message);
     }
 });

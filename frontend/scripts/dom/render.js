@@ -11,7 +11,7 @@ export async function renderUsers(apiUrl, { onEdit, onDelete } = {}) {
 
     usersSection.innerHTML = '';
 
-    users.forEach((user, index) => {
+    users.forEach((user) => {
         const userDiv = document.createElement('div');
         userDiv.classList.add('col-md-3');
 
@@ -30,11 +30,11 @@ export async function renderUsers(apiUrl, { onEdit, onDelete } = {}) {
         `;
 
         userDiv.querySelector('.btn-edit').addEventListener('click', () => {
-            onEdit?.(index, user);
+            onEdit?.(user.id, user);
         });
 
         userDiv.querySelector('.btn-delete').addEventListener('click', () => {
-            onDelete?.(index, user);
+            onDelete?.(user.id, user);
         });
 
         usersSection.appendChild(userDiv);
