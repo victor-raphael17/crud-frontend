@@ -1,0 +1,220 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "CRUD Users API",
+        "version": "1.0.0",
+        "description": "Simple CRUD API for managing users"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8000"
+        }
+    ],
+    "paths": {
+        "/api/users": {
+            "get": {
+                "summary": "List all users",
+                "responses": {
+                    "200": {
+                        "description": "Users list",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "users": {
+                                            "type": "array",
+                                            "items": { "$ref": "#/components/schemas/User" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "summary": "Create a new user",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": { "$ref": "#/components/schemas/User" }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "User created",
+                        "content": {
+                            "application/json": {
+                                "schema": { "$ref": "#/components/schemas/User" }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Missing required fields",
+                        "content": {
+                            "application/json": {
+                                "schema": { "$ref": "#/components/schemas/Error" }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "summary": "Update a user (full replacement)",
+                "parameters": [
+                    { "$ref": "#/components/parameters/Index" }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": { "$ref": "#/components/schemas/User" }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "User updated",
+                        "content": {
+                            "application/json": {
+                                "schema": { "$ref": "#/components/schemas/User" }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Missing index or required fields",
+                        "content": {
+                            "application/json": {
+                                "schema": { "$ref": "#/components/schemas/Error" }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "content": {
+                            "application/json": {
+                                "schema": { "$ref": "#/components/schemas/Error" }
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "summary": "Partially update a user",
+                "parameters": [
+                    { "$ref": "#/components/parameters/Index" }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": { "$ref": "#/components/schemas/UserPartial" }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "User updated",
+                        "content": {
+                            "application/json": {
+                                "schema": { "$ref": "#/components/schemas/User" }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Missing index",
+                        "content": {
+                            "application/json": {
+                                "schema": { "$ref": "#/components/schemas/Error" }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "content": {
+                            "application/json": {
+                                "schema": { "$ref": "#/components/schemas/Error" }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Delete a user",
+                "parameters": [
+                    { "$ref": "#/components/parameters/Index" }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User deleted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "deleted": { "$ref": "#/components/schemas/User" }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Missing index",
+                        "content": {
+                            "application/json": {
+                                "schema": { "$ref": "#/components/schemas/Error" }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "content": {
+                            "application/json": {
+                                "schema": { "$ref": "#/components/schemas/Error" }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "User": {
+                "type": "object",
+                "required": ["name", "age", "email"],
+                "properties": {
+                    "name": { "type": "string", "example": "Victor Raphael" },
+                    "age": { "type": "integer", "example": 24 },
+                    "email": { "type": "string", "format": "email", "example": "victor@email.com" }
+                }
+            },
+            "UserPartial": {
+                "type": "object",
+                "properties": {
+                    "name": { "type": "string" },
+                    "age": { "type": "integer" },
+                    "email": { "type": "string", "format": "email" }
+                }
+            },
+            "Error": {
+                "type": "object",
+                "properties": {
+                    "error": { "type": "string", "example": "name, age, email are required" }
+                }
+            }
+        },
+        "parameters": {
+            "Index": {
+                "name": "index",
+                "in": "query",
+                "required": true,
+                "schema": { "type": "integer" },
+                "description": "User index in the array"
+            }
+        }
+    }
+}

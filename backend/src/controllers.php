@@ -1,30 +1,11 @@
 <?php
 
-$dataFile = __DIR__ . '/../data/data.json';
-
-$method = $_SERVER['REQUEST_METHOD'];
-
-function validateRequiredFields(array $input, array $fields): ?string
-{
-    $missing = [];
-
-    foreach ($fields as $field) {
-        if (!isset($input[$field])) {
-            $missing[] = $field;
-        }
-    }
-
-    if (!empty($missing)) {
-        return implode(', ', $missing) . ' are required';
-    }
-
-    return null;
-}
+require_once __DIR__ . '/validation.php';
+require_once __DIR__ . '/data.php';
 
 function handleGet(string $dataFile): void
 {
-    $json = file_get_contents($dataFile);
-    echo $json;
+    echo json_encode(getUsers($dataFile));
 }
 
 function handlePost(string $dataFile): void
@@ -39,8 +20,7 @@ function handlePost(string $dataFile): void
         exit;
     }
 
-    $json = file_get_contents($dataFile);
-    $data = json_decode($json, true);
+    $data = getUsers($dataFile);
 
     $newUser = [
         'name' => $input['name'],
@@ -50,7 +30,7 @@ function handlePost(string $dataFile): void
 
     $data['users'][] = $newUser;
 
-    file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    saveUsers($dataFile, $data);
 
     http_response_code(201);
     echo json_encode($newUser);
@@ -75,7 +55,7 @@ function handlePut(string $dataFile): void
         exit;
     }
 
-    $data = json_decode(file_get_contents($dataFile), true);
+    $data = getUsers($dataFile);
 
     if (!isset($data['users'][$index])) {
         http_response_code(404);
@@ -89,7 +69,7 @@ function handlePut(string $dataFile): void
         'email' => $input['email'],
     ];
 
-    file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    saveUsers($dataFile, $data);
 
     echo json_encode($data['users'][$index]);
 }
@@ -105,7 +85,7 @@ function handlePatch(string $dataFile): void
         exit;
     }
 
-    $data = json_decode(file_get_contents($dataFile), true);
+    $data = getUsers($dataFile);
 
     if (!isset($data['users'][$index])) {
         http_response_code(404);
@@ -115,7 +95,7 @@ function handlePatch(string $dataFile): void
 
     $data['users'][$index] = array_merge($data['users'][$index], $input);
 
-    file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    saveUsers($dataFile, $data);
 
     echo json_encode($data['users'][$index]);
 }
@@ -130,7 +110,7 @@ function handleDelete(string $dataFile): void
         exit;
     }
 
-    $data = json_decode(file_get_contents($dataFile), true);
+    $data = getUsers($dataFile);
 
     if (!isset($data['users'][$index])) {
         http_response_code(404);
@@ -141,7 +121,7 @@ function handleDelete(string $dataFile): void
     $removed = $data['users'][$index];
     array_splice($data['users'], $index, 1);
 
-    file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    saveUsers($dataFile, $data);
 
     echo json_encode(['deleted' => $removed]);
 }
@@ -151,12 +131,3 @@ function handleMethodNotAllowed(): void
     http_response_code(405);
     echo json_encode(['error' => 'Method not allowed']);
 }
-
-match ($method) {
-    'GET' => handleGet($dataFile),
-    'POST' => handlePost($dataFile),
-    'PUT' => handlePut($dataFile),
-    'PATCH' => handlePatch($dataFile),
-    'DELETE' => handleDelete($dataFile),
-    default => handleMethodNotAllowed(),
-};
