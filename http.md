@@ -120,24 +120,24 @@ e o `match` só faz o **despacho** — decidir qual função chamar.
 
 O código foi separado em múltiplos arquivos para organização:
 
-- **`config.php`** — define `$dataFile` e `$allowedOrigins`
-- **`router.php`** — CORS, preflight OPTIONS e roteamento de URLs (`/api/users`, `/docs`, `/openapi.json`)
-- **`api.php`** — o `match` que despacha para os handlers
-- **`controllers.php`** — todas as funções `handle*()`
-- **`data.php`** — funções auxiliares `getUsers()`, `saveUsers()`, `findUser()`
-- **`validation.php`** — `validateRequiredFields()`
+- **`config/config.php`** — define `$dataFile` e `$allowedOrigins`
+- **`public/index.php`** — CORS, preflight OPTIONS e roteamento de URLs (`/api/users`, `/docs`, `/openapi.json`)
+- **`src/api.php`** — o `match` que despacha para os handlers
+- **`src/controllers.php`** — todas as funções `handle*()`
+- **`src/data.php`** — funções auxiliares `getUsers()`, `saveUsers()`, `findUser()`
+- **`src/validation.php`** — `validateRequiredFields()`
 
-### `config.php`
+### `config/config.php`
 
 ```php
-$dataFile = __DIR__ . '/../data/data.json';
+$dataFile = __DIR__ . '/../../data/data.json';
 $allowedOrigins = ['http://localhost:5500', 'http://127.0.0.1:5500'];
 ```
 
-### `api.php`
+### `src/api.php`
 
 ```php
-require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/controllers.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -152,7 +152,7 @@ match ($method) {
 };
 ```
 
-### `data.php` — funções auxiliares
+### `src/data.php` — funções auxiliares
 
 Em vez de repetir `json_decode(file_get_contents($dataFile), true)` e `file_put_contents(...)` em todo handler, extraímos para funções reutilizáveis:
 
@@ -168,7 +168,7 @@ function saveUsers(string $dataFile, array $data): void
 }
 ```
 
-### `validation.php` — validação genérica
+### `src/validation.php` — validação genérica
 
 Em vez de verificar cada campo manualmente com `!isset()`, usamos uma função que recebe a lista de campos obrigatórios:
 
@@ -266,7 +266,12 @@ const data = await response.json();
 // A função (em controllers.php):
 function handleGet(string $dataFile): void
 {
-    echo json_encode(getUsers($dataFile));
+    try {
+        echo json_encode(getUsers($dataFile));
+    } catch (\Throwable $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Internal server error']);
+    }
 }
 ```
 
@@ -402,6 +407,13 @@ json_decode(..., true):            ['name' => 'João', 'age' => 25]  ← array P
 ---
 
 ```php
+    // Validação — verifica se o body é JSON válido
+    if (!is_array($input)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Invalid JSON body']);
+        exit;
+    }
+
     // Validação — usa a função genérica de validation.php
     $error = validateRequiredFields($input, ['name', 'age', 'email']);
 
@@ -411,24 +423,29 @@ json_decode(..., true):            ['name' => 'João', 'age' => 25]  ← array P
         exit;
     }
 
-    // Lê dados existentes — usa a função de data.php
-    $data = getUsers($dataFile);
+    try {
+        // Lê dados existentes — usa a função de data.php
+        $data = getUsers($dataFile);
 
-    // Cria o novo usuário
-    $newUser = [
-        'name' => $input['name'],
-        'age' => (int) $input['age'],
-        'email' => $input['email'],
-    ];
+        // Cria o novo usuário
+        $newUser = [
+            'name' => $input['name'],
+            'age' => (int) $input['age'],
+            'email' => $input['email'],
+        ];
 
-    // Adiciona ao array
-    $data['users'][] = $newUser;
+        // Adiciona ao array
+        $data['users'][] = $newUser;
 
-    // Salva no arquivo — usa a função de data.php
-    saveUsers($dataFile, $data);
+        // Salva no arquivo — usa a função de data.php
+        saveUsers($dataFile, $data);
 
-    http_response_code(201); // 201 = Created
-    echo json_encode($newUser);
+        http_response_code(201); // 201 = Created
+        echo json_encode($newUser);
+    } catch (\Throwable $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Internal server error']);
+    }
 }
 ```
 
@@ -538,6 +555,12 @@ $index = $_GET['index'];          // ⚠ PHP Warning: Undefined array key "index
         exit;
     }
 
+    if (!is_array($input)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Invalid JSON body']);
+        exit;
+    }
+
     $error = validateRequiredFields($input, ['name', 'age', 'email']);
 
     if ($error) {
@@ -546,25 +569,28 @@ $index = $_GET['index'];          // ⚠ PHP Warning: Undefined array key "index
         exit;
     }
 
-    $data = getUsers($dataFile);
+    try {
+        $data = getUsers($dataFile);
 
-    if (!isset($data['users'][$index])) {
-        http_response_code(404);
-        echo json_encode(['error' => 'User not found']);
-        exit;
-    }
+        if (!isset($data['users'][$index])) {
+            http_response_code(404);
+            echo json_encode(['error' => 'User not found']);
+            exit;
+        }
 ```
 
-#### Por que três validações separadas?
+#### Por que quatro validações separadas?
 
 São validações **diferentes**:
 
 1. **400 (Bad Request)** — falta o index na URL. Culpa do **cliente**.
-2. **400 (Bad Request)** — faltam campos obrigatórios no body. Culpa do **cliente**.
-3. **404 (Not Found)** — os dados estão corretos, mas o usuário não existe. Não é culpa de ninguém.
+2. **400 (Bad Request)** — body não é JSON válido. Culpa do **cliente**.
+3. **400 (Bad Request)** — faltam campos obrigatórios no body. Culpa do **cliente**.
+4. **404 (Not Found)** — os dados estão corretos, mas o usuário não existe. Não é culpa de ninguém.
 
 ```
 PUT /api/users              → 400 (cadê o index?)
+PUT /api/users?index=0 + body inválido → 400 (JSON inválido)
 PUT /api/users?index=0      → 400 (cadê o name, age e email no body?)
 PUT /api/users?index=999    → 404 (index 999 não existe)
 PUT /api/users?index=0 + body completo → 200 ✓
@@ -573,16 +599,20 @@ PUT /api/users?index=0 + body completo → 200 ✓
 ---
 
 ```php
-    // Substitui o usuário inteiro
-    $data['users'][$index] = [
-        'name' => $input['name'],
-        'age' => (int) $input['age'],
-        'email' => $input['email'],
-    ];
+        // Substitui o usuário inteiro
+        $data['users'][$index] = [
+            'name' => $input['name'],
+            'age' => (int) $input['age'],
+            'email' => $input['email'],
+        ];
 
-    saveUsers($dataFile, $data);
+        saveUsers($dataFile, $data);
 
-    echo json_encode($data['users'][$index]);
+        echo json_encode($data['users'][$index]);
+    } catch (\Throwable $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Internal server error']);
+    }
 }
 ```
 
@@ -715,15 +745,22 @@ function handlePatch(string $dataFile): void
         exit;
     }
 
-    $data = getUsers($dataFile);
-
-    if (!isset($data['users'][$index])) {
-        http_response_code(404);
-        echo json_encode(['error' => 'User not found']);
+    if (!is_array($input)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Invalid JSON body']);
         exit;
     }
 
-    $data['users'][$index] = array_merge($data['users'][$index], $input);
+    try {
+        $data = getUsers($dataFile);
+
+        if (!isset($data['users'][$index])) {
+            http_response_code(404);
+            echo json_encode(['error' => 'User not found']);
+            exit;
+        }
+
+        $data['users'][$index] = array_merge($data['users'][$index], $input);
 ```
 
 #### `array_merge()` — como funciona a mágica?
@@ -764,9 +801,13 @@ $data['users'][$index] = array_merge($data['users'][$index], $input);
 ---
 
 ```php
-    saveUsers($dataFile, $data);
+        saveUsers($dataFile, $data);
 
-    echo json_encode($data['users'][$index]);
+        echo json_encode($data['users'][$index]);
+    } catch (\Throwable $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Internal server error']);
+    }
 }
 ```
 
@@ -832,16 +873,17 @@ vêm da **URL** via `$_GET`, não do body. Então não precisa de `php://input` 
         exit;
     }
 
-    $data = getUsers($dataFile);
+    try {
+        $data = getUsers($dataFile);
 
-    if (!isset($data['users'][$index])) {
-        http_response_code(404);
-        echo json_encode(['error' => 'User not found']);
-        exit;
-    }
+        if (!isset($data['users'][$index])) {
+            http_response_code(404);
+            echo json_encode(['error' => 'User not found']);
+            exit;
+        }
 
-    $removed = $data['users'][$index];
-    array_splice($data['users'], $index, 1);
+        $removed = $data['users'][$index];
+        array_splice($data['users'], $index, 1);
 ```
 
 #### `array_splice()` — por que não usar `unset()`?
@@ -878,9 +920,13 @@ Se usasse `unset`, quando salvar no JSON os índices quebram e viram chaves de o
 ---
 
 ```php
-    saveUsers($dataFile, $data);
+        saveUsers($dataFile, $data);
 
-    echo json_encode(['deleted' => $removed]);
+        echo json_encode(['deleted' => $removed]);
+    } catch (\Throwable $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Internal server error']);
+    }
 }
 ```
 
@@ -931,14 +977,14 @@ Ou seja, até o seu POST dispara preflight, porque tem o header `Content-Type: a
 ### Backend (PHP)
 
 ```php
-// No router.php — responde ao preflight antes de rotear
+// No public/index.php — responde ao preflight antes de rotear
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
     exit;
 }
 ```
 
-#### Por que fica no `router.php` e não no `api.php`?
+#### Por que fica no `public/index.php` e não no `api.php`?
 
 Porque o preflight precisa ser respondido **antes de qualquer processamento**. Se o OPTIONS chegasse
 no `api.php`, iria entrar no `match` e cair no `default` com erro 405. O router intercepta antes:
@@ -946,10 +992,10 @@ no `api.php`, iria entrar no `match` e cair no `default` com erro 405. O router 
 ```
 Requisição chega
     ↓
-router.php: é OPTIONS? → sim → 204 + exit (acabou aqui)
+public/index.php: é OPTIONS? → sim → 204 + exit (acabou aqui)
                         → não → roteia pela URI:
                                   /api/users   → api.php
-                                  /docs        → docs.php (Swagger UI)
+                                  /docs        → docs.html (Swagger UI)
                                   /openapi.json → serve o JSON da spec
                                   default      → 404
 ```
@@ -961,14 +1007,14 @@ te devolver no body". Faz sentido porque o preflight é só uma verificação �
 
 #### E os headers de CORS?
 
-Eles são definidos **acima** do `if (OPTIONS)`, no começo do `router.php`.
+Eles são definidos **acima** do `if (OPTIONS)`, no começo do `public/index.php`.
 O `$allowedOrigins` vem do `config.php` (importado via `require_once`):
 
 ```php
 // config.php:
 $allowedOrigins = ['http://localhost:5500', 'http://127.0.0.1:5500'];
 
-// router.php:
+// public/index.php:
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
 in_array($origin, $allowedOrigins) ?
@@ -1013,3 +1059,4 @@ fetch(url, {method:'DELETE'}) →      DELETE → $_GET['index'] → array_splic
 | `400` | Bad Request | Dados inválidos ou faltando |
 | `404` | Not Found | Recurso não existe |
 | `405` | Method Not Allowed | Método HTTP não suportado |
+| `500` | Internal Server Error | Erro interno no servidor |
