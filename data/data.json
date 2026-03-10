@@ -1,11 +1,17 @@
 {
-    "nextId": 4,
+    "nextId": 6,
     "users": [
         {
-            "name": "asdf",
-            "age": 123,
-            "email": "asdf@asdf.com",
-            "id": 3
+            "name": "Victor Raphael",
+            "age": 20,
+            "email": "victor.raphael@grupo-3c.com",
+            "id": 4
+        },
+        {
+            "name": "Aristeu Nei de Lima",
+            "age": 79,
+            "email": "nemsei@hotmail.com",
+            "id": 5
         }
     ]
 }
