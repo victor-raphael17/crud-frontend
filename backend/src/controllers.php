@@ -5,12 +5,23 @@ require_once __DIR__ . '/data.php';
 
 function handleGet(string $dataFile): void
 {
-    echo json_encode(getUsers($dataFile));
+    try {
+        echo json_encode(getUsers($dataFile));
+    } catch (\Throwable $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Internal server error']);
+    }
 }
 
 function handlePost(string $dataFile): void
 {
     $input = json_decode(file_get_contents('php://input'), true);
+
+    if (!is_array($input)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Invalid JSON body']);
+        exit;
+    }
 
     $error = validateRequiredFields($input, ['name', 'age', 'email']);
 
@@ -20,20 +31,25 @@ function handlePost(string $dataFile): void
         exit;
     }
 
-    $data = getUsers($dataFile);
+    try {
+        $data = getUsers($dataFile);
 
-    $newUser = [
-        'name' => $input['name'],
-        'age' => (int) $input['age'],
-        'email' => $input['email'],
-    ];
+        $newUser = [
+            'name' => $input['name'],
+            'age' => (int) $input['age'],
+            'email' => $input['email'],
+        ];
 
-    $data['users'][] = $newUser;
+        $data['users'][] = $newUser;
 
-    saveUsers($dataFile, $data);
+        saveUsers($dataFile, $data);
 
-    http_response_code(201);
-    echo json_encode($newUser);
+        http_response_code(201);
+        echo json_encode($newUser);
+    } catch (\Throwable $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Internal server error']);
+    }
 }
 
 function handlePut(string $dataFile): void
@@ -47,6 +63,12 @@ function handlePut(string $dataFile): void
         exit;
     }
 
+    if (!is_array($input)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Invalid JSON body']);
+        exit;
+    }
+
     $error = validateRequiredFields($input, ['name', 'age', 'email']);
 
     if ($error) {
@@ -55,23 +77,28 @@ function handlePut(string $dataFile): void
         exit;
     }
 
-    $data = getUsers($dataFile);
+    try {
+        $data = getUsers($dataFile);
 
-    if (!isset($data['users'][$index])) {
-        http_response_code(404);
-        echo json_encode(['error' => 'User not found']);
-        exit;
+        if (!isset($data['users'][$index])) {
+            http_response_code(404);
+            echo json_encode(['error' => 'User not found']);
+            exit;
+        }
+
+        $data['users'][$index] = [
+            'name' => $input['name'],
+            'age' => (int) $input['age'],
+            'email' => $input['email'],
+        ];
+
+        saveUsers($dataFile, $data);
+
+        echo json_encode($data['users'][$index]);
+    } catch (\Throwable $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Internal server error']);
     }
-
-    $data['users'][$index] = [
-        'name' => $input['name'],
-        'age' => (int) $input['age'],
-        'email' => $input['email'],
-    ];
-
-    saveUsers($dataFile, $data);
-
-    echo json_encode($data['users'][$index]);
 }
 
 function handlePatch(string $dataFile): void
@@ -85,19 +112,30 @@ function handlePatch(string $dataFile): void
         exit;
     }
 
-    $data = getUsers($dataFile);
-
-    if (!isset($data['users'][$index])) {
-        http_response_code(404);
-        echo json_encode(['error' => 'User not found']);
+    if (!is_array($input)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Invalid JSON body']);
         exit;
     }
 
-    $data['users'][$index] = array_merge($data['users'][$index], $input);
+    try {
+        $data = getUsers($dataFile);
 
-    saveUsers($dataFile, $data);
+        if (!isset($data['users'][$index])) {
+            http_response_code(404);
+            echo json_encode(['error' => 'User not found']);
+            exit;
+        }
 
-    echo json_encode($data['users'][$index]);
+        $data['users'][$index] = array_merge($data['users'][$index], $input);
+
+        saveUsers($dataFile, $data);
+
+        echo json_encode($data['users'][$index]);
+    } catch (\Throwable $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Internal server error']);
+    }
 }
 
 function handleDelete(string $dataFile): void
@@ -110,20 +148,25 @@ function handleDelete(string $dataFile): void
         exit;
     }
 
-    $data = getUsers($dataFile);
+    try {
+        $data = getUsers($dataFile);
 
-    if (!isset($data['users'][$index])) {
-        http_response_code(404);
-        echo json_encode(['error' => 'User not found']);
-        exit;
+        if (!isset($data['users'][$index])) {
+            http_response_code(404);
+            echo json_encode(['error' => 'User not found']);
+            exit;
+        }
+
+        $removed = $data['users'][$index];
+        array_splice($data['users'], $index, 1);
+
+        saveUsers($dataFile, $data);
+
+        echo json_encode(['deleted' => $removed]);
+    } catch (\Throwable $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Internal server error']);
     }
-
-    $removed = $data['users'][$index];
-    array_splice($data['users'], $index, 1);
-
-    saveUsers($dataFile, $data);
-
-    echo json_encode(['deleted' => $removed]);
 }
 
 function handleMethodNotAllowed(): void

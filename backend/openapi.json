@@ -30,6 +30,14 @@
                                 }
                             }
                         }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": { "$ref": "#/components/schemas/Error" }
+                            }
+                        }
                     }
                 }
             },
@@ -53,7 +61,15 @@
                         }
                     },
                     "400": {
-                        "description": "Missing required fields",
+                        "description": "Invalid JSON body or missing required fields",
+                        "content": {
+                            "application/json": {
+                                "schema": { "$ref": "#/components/schemas/Error" }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
                         "content": {
                             "application/json": {
                                 "schema": { "$ref": "#/components/schemas/Error" }
@@ -85,7 +101,7 @@
                         }
                     },
                     "400": {
-                        "description": "Missing index or required fields",
+                        "description": "Missing index, invalid JSON body, or missing required fields",
                         "content": {
                             "application/json": {
                                 "schema": { "$ref": "#/components/schemas/Error" }
@@ -94,6 +110,14 @@
                     },
                     "404": {
                         "description": "User not found",
+                        "content": {
+                            "application/json": {
+                                "schema": { "$ref": "#/components/schemas/Error" }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
                         "content": {
                             "application/json": {
                                 "schema": { "$ref": "#/components/schemas/Error" }
@@ -125,7 +149,7 @@
                         }
                     },
                     "400": {
-                        "description": "Missing index",
+                        "description": "Missing index or invalid JSON body",
                         "content": {
                             "application/json": {
                                 "schema": { "$ref": "#/components/schemas/Error" }
@@ -134,6 +158,14 @@
                     },
                     "404": {
                         "description": "User not found",
+                        "content": {
+                            "application/json": {
+                                "schema": { "$ref": "#/components/schemas/Error" }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
                         "content": {
                             "application/json": {
                                 "schema": { "$ref": "#/components/schemas/Error" }
@@ -171,6 +203,14 @@
                     },
                     "404": {
                         "description": "User not found",
+                        "content": {
+                            "application/json": {
+                                "schema": { "$ref": "#/components/schemas/Error" }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
                         "content": {
                             "application/json": {
                                 "schema": { "$ref": "#/components/schemas/Error" }
