@@ -38,9 +38,9 @@ function refreshUsers() {
             if (!confirm('Are you sure you want to delete this user?')) return;
 
             try {
-                await deleteUser(apiUrl, index);
+                deleteUser(apiUrl, index);
                 if (editingIndex === index) exitEditMode();
-                await refreshUsers();
+                refreshUsers();
             } catch (error) {
                 alert(error.message);
             }
@@ -61,13 +61,13 @@ form.addEventListener('submit', async (event) => {
 
     try {
         if (editingIndex !== null) {
-            await updateUser(apiUrl, editingIndex, { name, age, email });
+            updateUser(apiUrl, editingIndex, { name, age, email });
         } else {
-            await createUser(apiUrl, { name, age, email });
+            createUser(apiUrl, { name, age, email });
         }
 
         exitEditMode();
-        await refreshUsers();
+        refreshUsers();
     } catch (error) {
         alert(error.message);
     }
