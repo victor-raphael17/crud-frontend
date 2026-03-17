@@ -46,10 +46,6 @@ function exitEditMode() {
     form.reset();
 }
 
-function refreshUsers() {
-    renderUsers(apiUrl);
-}
-
 function getUserFromCard(button) {
     const card = button.closest('.user-card');
     return findUserById(Number(card.id));
@@ -71,14 +67,14 @@ usersSection.addEventListener('click', async (event) => {
         try {
             await deleteUser(apiUrl, user.id);
             if (editingId === user.id) exitEditMode();
-            refreshUsers();
+            renderUsers(apiUrl);
         } catch (error) {
             showError(error.message);
         }
     }
 });
 
-document.addEventListener('DOMContentLoaded', refreshUsers);
+document.addEventListener('DOMContentLoaded', () => renderUsers(apiUrl));
 
 cancelBtn.addEventListener('click', exitEditMode);
 
@@ -114,7 +110,7 @@ form.addEventListener('submit', async (event) => {
         }
 
         exitEditMode();
-        refreshUsers();
+        renderUsers(apiUrl);
     } catch (error) {
         showError(error.message);
     }

@@ -166,14 +166,8 @@ const flows = {
     {
       icon: '&#9656;', title: 'DOMContentLoaded', file: 'app.js',
       color: 'var(--accent)',
-      body: 'O navegador termina de carregar o HTML. O evento <code>DOMContentLoaded</code> dispara e chama <code>refreshUsers()</code>.',
-      detail: `document.addEventListener('DOMContentLoaded', refreshUsers);`,
-    },
-    {
-      icon: '&#8635;', title: 'refreshUsers()', file: 'app.js',
-      color: 'var(--purple)',
-      body: 'Função central que orquestra o carregamento. Chama <code>renderUsers()</code> passando apenas a URL da API.',
-      detail: `function refreshUsers() {\n  renderUsers(apiUrl);\n}`,
+      body: 'O navegador termina de carregar o HTML. O evento <code>DOMContentLoaded</code> dispara e chama <code>renderUsers(apiUrl)</code> diretamente.',
+      detail: `document.addEventListener('DOMContentLoaded', () => renderUsers(apiUrl));`,
     },
     {
       icon: '&#9776;', title: 'renderUsers()', file: 'render.js',
@@ -217,7 +211,7 @@ const flows = {
       icon: '&#9881;', title: 'Evento submit', file: 'app.js',
       color: 'var(--accent)',
       body: 'O listener de <code>submit</code> captura o evento, previne o reload da página e coleta os valores dos campos.',
-      detail: `form.addEventListener('submit', async (event) => {\n  event.preventDefault();\n\n  const name = document.getElementById('name').value;\n  const age = document.getElementById('age').value;\n  const email = document.getElementById('email').value;\n\n  hideError();\n\n  try {\n    if (editingId !== null) {\n      const changed = {};\n      if (name !== originalUser.name) changed.name = name;\n      if (Number(age) !== originalUser.age) changed.age = age;\n      if (email !== originalUser.email) changed.email = email;\n\n      if (Object.keys(changed).length === 0) {\n        exitEditMode();\n        return;\n      }\n\n      const allChanged = Object.keys(changed).length === 3;\n      if (allChanged) {\n        await updateUser(apiUrl, editingId, { name, age, email });\n      } else {\n        await patchUser(apiUrl, editingId, changed);\n      }\n    } else {\n      await createUser(apiUrl, { name, age, email });\n    }\n\n    exitEditMode();\n    refreshUsers();\n  } catch (error) {\n    showError(error.message);\n  }\n});`,
+      detail: `form.addEventListener('submit', async (event) => {\n  event.preventDefault();\n\n  const name = document.getElementById('name').value;\n  const age = document.getElementById('age').value;\n  const email = document.getElementById('email').value;\n\n  hideError();\n\n  try {\n    if (editingId !== null) {\n      const changed = {};\n      if (name !== originalUser.name) changed.name = name;\n      if (Number(age) !== originalUser.age) changed.age = age;\n      if (email !== originalUser.email) changed.email = email;\n\n      if (Object.keys(changed).length === 0) {\n        exitEditMode();\n        return;\n      }\n\n      const allChanged = Object.keys(changed).length === 3;\n      if (allChanged) {\n        await updateUser(apiUrl, editingId, { name, age, email });\n      } else {\n        await patchUser(apiUrl, editingId, changed);\n      }\n    } else {\n      await createUser(apiUrl, { name, age, email });\n    }\n\n    exitEditMode();\n    renderUsers(apiUrl);\n  } catch (error) {\n    showError(error.message);\n  }\n});`,
     },
     {
       icon: '&#10004;', title: 'Verifica modo de edição', file: 'app.js',
@@ -238,10 +232,10 @@ const flows = {
       response: { status: '201 Created', body: '{\n  "name": "Ana", "age": 30,\n  "email": "ana@email.com", "id": 2\n}' },
     },
     {
-      icon: '&#8635;', title: 'exitEditMode() + refreshUsers()', file: 'app.js',
+      icon: '&#8635;', title: 'exitEditMode() + renderUsers()', file: 'app.js',
       color: 'var(--purple)',
-      body: 'Limpa o formulário com <code>form.reset()</code> e chama <code>refreshUsers()</code> para recarregar a lista de cards.',
-      detail: `function exitEditMode() {\n  editingId = null;\n  originalUser = null;\n  formTitle.textContent = 'Create User';\n  submitBtn.textContent = 'Create';\n  cancelBtn.style.display = 'none';\n  form.reset();\n}\n\nexitEditMode();\nrefreshUsers();`,
+      body: 'Limpa o formulário com <code>form.reset()</code> e chama <code>renderUsers(apiUrl)</code> para recarregar a lista de cards.',
+      detail: `function exitEditMode() {\n  editingId = null;\n  originalUser = null;\n  formTitle.textContent = 'Create User';\n  submitBtn.textContent = 'Create';\n  cancelBtn.style.display = 'none';\n  form.reset();\n}\n\nexitEditMode();\nrenderUsers(apiUrl);`,
     },
     {
       icon: '&#10003;', title: 'Novo card aparece na tela', file: '',
@@ -287,10 +281,10 @@ const flows = {
       response: { status: '200 OK', body: '{\n  "name": "João Silva", "age": 26,\n  "email": "joao.silva@email.com", "id": 1\n}' },
     },
     {
-      icon: '&#8635;', title: 'exitEditMode() + refreshUsers()', file: 'app.js',
+      icon: '&#8635;', title: 'exitEditMode() + renderUsers()', file: 'app.js',
       color: 'var(--purple)',
       body: 'Limpa <code>editingId</code> e <code>originalUser</code>, restaura o formulário ao modo de criação e re-renderiza a lista.',
-      detail: `exitEditMode();\nrefreshUsers();`,
+      detail: `exitEditMode();\nrenderUsers(apiUrl);`,
     },
     {
       icon: '&#10003;', title: 'Card atualizado na tela', file: '',
@@ -336,10 +330,10 @@ const flows = {
       response: { status: '200 OK', body: '{\n  "name": "João", "age": 27,\n  "email": "joao@email.com", "id": 1\n}' },
     },
     {
-      icon: '&#8635;', title: 'exitEditMode() + refreshUsers()', file: 'app.js',
+      icon: '&#8635;', title: 'exitEditMode() + renderUsers()', file: 'app.js',
       color: 'var(--purple)',
       body: 'Limpa <code>editingId</code> e <code>originalUser</code>, restaura o formulário ao modo de criação e re-renderiza a lista.',
-      detail: `exitEditMode();\nrefreshUsers();`,
+      detail: `exitEditMode();\nrenderUsers(apiUrl);`,
     },
     {
       icon: '&#10003;', title: 'Card atualizado na tela', file: '',
@@ -353,13 +347,13 @@ const flows = {
       icon: '&#9656;', title: 'Clique no botão Delete', file: 'app.js',
       color: 'var(--accent)',
       body: 'O usuário clica em <code>Delete</code> no card. O event delegation no <code>#users</code> captura o clique via <code>data-action</code> e busca os dados do usuário no <code>usersCache</code> via <code>getUserFromCard()</code> → <code>findUserById()</code>.',
-      detail: `usersSection.addEventListener('click', async (event) => {\n  const { target } = event;\n\n  if (target.dataset.action === 'edit') {\n    enterEditMode(getUserFromCard(target));\n  }\n\n  if (target.dataset.action === 'delete') {\n    const user = getUserFromCard(target);\n    if (!confirm('Are you sure you want to delete this user?'))\n      return;\n\n    try {\n      await deleteUser(apiUrl, user.id);\n      if (editingId === user.id) exitEditMode();\n      refreshUsers();\n    } catch (error) {\n      showError(error.message);\n    }\n  }\n});`,
+      detail: `usersSection.addEventListener('click', async (event) => {\n  const { target } = event;\n\n  if (target.dataset.action === 'edit') {\n    enterEditMode(getUserFromCard(target));\n  }\n\n  if (target.dataset.action === 'delete') {\n    const user = getUserFromCard(target);\n    if (!confirm('Are you sure you want to delete this user?'))\n      return;\n\n    try {\n      await deleteUser(apiUrl, user.id);\n      if (editingId === user.id) exitEditMode();\n      renderUsers(apiUrl);\n    } catch (error) {\n      showError(error.message);\n    }\n  }\n});`,
     },
     {
       icon: '&#10004;', title: 'Diálogo de confirmação', file: 'app.js',
       color: 'var(--yellow)',
       body: 'O navegador exibe <code>confirm()</code>. Se o usuário cancelar, o fluxo para aqui. Se confirmar, continua.',
-      detail: `if (target.dataset.action === 'delete') {\n  const user = getUserFromCard(target);\n  if (!confirm('Are you sure you want to delete this user?'))\n    return;\n\n  try {\n    await deleteUser(apiUrl, user.id);\n    if (editingId === user.id) exitEditMode();\n    refreshUsers();\n  } catch (error) {\n    showError(error.message);\n  }\n}`,
+      detail: `if (target.dataset.action === 'delete') {\n  const user = getUserFromCard(target);\n  if (!confirm('Are you sure you want to delete this user?'))\n    return;\n\n  try {\n    await deleteUser(apiUrl, user.id);\n    if (editingId === user.id) exitEditMode();\n    renderUsers(apiUrl);\n  } catch (error) {\n    showError(error.message);\n  }\n}`,
     },
     {
       icon: '&#10147;', title: 'deleteUser() — fetch DELETE', file: 'delete.js',
@@ -380,10 +374,10 @@ const flows = {
       detail: `if (editingId === user.id) exitEditMode();`,
     },
     {
-      icon: '&#8635;', title: 'refreshUsers()', file: 'app.js',
+      icon: '&#8635;', title: 'renderUsers(apiUrl)', file: 'app.js',
       color: 'var(--purple)',
-      body: 'Re-renderiza a lista de cards chamando <code>renderUsers()</code> novamente.',
-      detail: `refreshUsers();`,
+      body: 'Re-renderiza a lista de cards chamando <code>renderUsers(apiUrl)</code> diretamente.',
+      detail: `renderUsers(apiUrl);`,
     },
     {
       icon: '&#10003;', title: 'Card removido da tela', file: '',
