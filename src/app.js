@@ -1,4 +1,4 @@
-import { renderUsers } from './scripts/dom/render.js';
+import { renderUsers, findUserById } from './scripts/dom/render.js';
 import { createUser } from './scripts/api/create.js';
 import { updateUser, patchUser } from './scripts/api/update.js';
 import { deleteUser } from './scripts/api/delete.js';
@@ -47,21 +47,36 @@ function exitEditMode() {
 }
 
 function refreshUsers() {
-    renderUsers(apiUrl, {
-        onEdit: enterEditMode,
-        onDelete: async (user) => {
-            if (!confirm('Are you sure you want to delete this user?')) return;
-
-            try {
-                await deleteUser(apiUrl, user.id);
-                if (editingId === user.id) exitEditMode();
-                refreshUsers();
-            } catch (error) {
-                showError(error.message);
-            }
-        },
-    });
+    renderUsers(apiUrl);
 }
+
+function getUserFromCard(button) {
+    const card = button.closest('.user-card');
+    return findUserById(Number(card.id));
+}
+
+const usersSection = document.getElementById('users');
+
+usersSection.addEventListener('click', async (event) => {
+    const { target } = event;
+
+    if (target.dataset.action === 'edit') {
+        enterEditMode(getUserFromCard(target));
+    }
+
+    if (target.dataset.action === 'delete') {
+        const user = getUserFromCard(target);
+        if (!confirm('Are you sure you want to delete this user?')) return;
+
+        try {
+            await deleteUser(apiUrl, user.id);
+            if (editingId === user.id) exitEditMode();
+            refreshUsers();
+        } catch (error) {
+            showError(error.message);
+        }
+    }
+});
 
 document.addEventListener('DOMContentLoaded', refreshUsers);
 
