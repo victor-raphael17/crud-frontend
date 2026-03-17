@@ -30,11 +30,11 @@ export async function renderUsers(apiUrl, { onEdit, onDelete } = {}) {
         `;
 
         userDiv.querySelector('.btn-edit').addEventListener('click', () => {
-            onEdit?.(user.id, user);
+            onEdit(user);
         });
 
         userDiv.querySelector('.btn-delete').addEventListener('click', () => {
-            onDelete?.(user.id, user);
+            onDelete(user);
         });
 
         usersSection.appendChild(userDiv);

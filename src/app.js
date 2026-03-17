@@ -25,8 +25,8 @@ function hideError() {
     formError.textContent = '';
 }
 
-function enterEditMode(id, user) {
-    editingId = id;
+function enterEditMode(user) {
+    editingId = user.id;
     originalUser = { ...user };
     document.getElementById('name').value = user.name;
     document.getElementById('age').value = user.age;
@@ -49,12 +49,12 @@ function exitEditMode() {
 function refreshUsers() {
     renderUsers(apiUrl, {
         onEdit: enterEditMode,
-        onDelete: async (id) => {
+        onDelete: async (user) => {
             if (!confirm('Are you sure you want to delete this user?')) return;
 
             try {
-                await deleteUser(apiUrl, id);
-                if (editingId === id) exitEditMode();
+                await deleteUser(apiUrl, user.id);
+                if (editingId === user.id) exitEditMode();
                 refreshUsers();
             } catch (error) {
                 showError(error.message);
@@ -63,9 +63,9 @@ function refreshUsers() {
     });
 }
 
-cancelBtn.addEventListener('click', exitEditMode);
-
 document.addEventListener('DOMContentLoaded', refreshUsers);
+
+cancelBtn.addEventListener('click', exitEditMode);
 
 form.addEventListener('submit', async (event) => {
     event.preventDefault();
