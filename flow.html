@@ -179,7 +179,7 @@ const flows = {
       icon: '&#9776;', title: 'renderUsers()', file: 'render.js',
       color: 'var(--pink)',
       body: 'Recebe apenas a URL. Chama <code>getUsers()</code> para buscar os dados na API e armazena o resultado em <code>usersCache</code> para consulta posterior.',
-      detail: `export async function renderUsers(apiUrl) {\n  const users = await getUsers(apiUrl);\n  usersCache = users;\n  const usersSection = document.getElementById('users');\n  // ...\n}`,
+      detail: `export async function renderUsers(apiUrl) {\n  const users = await getUsers(apiUrl);\n  usersCache = users;\n  const usersSection = document.getElementById('users');\n\n  if (users.length === 0) {\n    usersSection.innerHTML =\n      '<p class="text-muted">No users found.</p>';\n    return;\n  }\n\n  usersSection.innerHTML = '';\n\n  users.forEach((user) => {\n    const userDiv = document.createElement('div');\n    userDiv.classList.add('col-md-3');\n\n    userDiv.innerHTML = \\\`\n      <div class="card user-card h-100" id="\\\${user.id}">\n        <div class="card-body">\n          <h5 class="card-title">\\\${user.name}</h5>\n          <p class="card-text mb-1">\n            <strong>Age:</strong> \\\${user.age}\n          </p>\n          <p class="card-text">\n            <strong>Email:</strong> \\\${user.email}\n          </p>\n        </div>\n        <div class="card-footer d-flex gap-2">\n          <button class="btn btn-sm btn-outline-dark flex-fill"\n                  data-action="edit">Edit</button>\n          <button class="btn btn-sm btn-outline-danger flex-fill"\n                  data-action="delete">Delete</button>\n        </div>\n      </div>\\\`;\n\n    usersSection.appendChild(userDiv);\n  });\n}`,
     },
     {
       icon: '&#10147;', title: 'getUsers() — fetch GET', file: 'read.js',
@@ -217,7 +217,7 @@ const flows = {
       icon: '&#9881;', title: 'Evento submit', file: 'app.js',
       color: 'var(--accent)',
       body: 'O listener de <code>submit</code> captura o evento, previne o reload da página e coleta os valores dos campos.',
-      detail: `form.addEventListener('submit', async (event) => {\n  event.preventDefault();\n\n  const name = document.getElementById('name').value;\n  const age = document.getElementById('age').value;\n  const email = document.getElementById('email').value;\n\n  hideError();\n  // ...\n});`,
+      detail: `form.addEventListener('submit', async (event) => {\n  event.preventDefault();\n\n  const name = document.getElementById('name').value;\n  const age = document.getElementById('age').value;\n  const email = document.getElementById('email').value;\n\n  hideError();\n\n  try {\n    if (editingId !== null) {\n      const changed = {};\n      if (name !== originalUser.name) changed.name = name;\n      if (Number(age) !== originalUser.age) changed.age = age;\n      if (email !== originalUser.email) changed.email = email;\n\n      if (Object.keys(changed).length === 0) {\n        exitEditMode();\n        return;\n      }\n\n      const allChanged = Object.keys(changed).length === 3;\n      if (allChanged) {\n        await updateUser(apiUrl, editingId, { name, age, email });\n      } else {\n        await patchUser(apiUrl, editingId, changed);\n      }\n    } else {\n      await createUser(apiUrl, { name, age, email });\n    }\n\n    exitEditMode();\n    refreshUsers();\n  } catch (error) {\n    showError(error.message);\n  }\n});`,
     },
     {
       icon: '&#10004;', title: 'Verifica modo de edição', file: 'app.js',
@@ -353,13 +353,13 @@ const flows = {
       icon: '&#9656;', title: 'Clique no botão Delete', file: 'app.js',
       color: 'var(--accent)',
       body: 'O usuário clica em <code>Delete</code> no card. O event delegation no <code>#users</code> captura o clique via <code>data-action</code> e busca os dados do usuário no <code>usersCache</code> via <code>getUserFromCard()</code> → <code>findUserById()</code>.',
-      detail: `usersSection.addEventListener('click', async (event) => {\n  const { target } = event;\n\n  if (target.dataset.action === 'delete') {\n    const user = getUserFromCard(target);\n    // ...\n  }\n});`,
+      detail: `usersSection.addEventListener('click', async (event) => {\n  const { target } = event;\n\n  if (target.dataset.action === 'edit') {\n    enterEditMode(getUserFromCard(target));\n  }\n\n  if (target.dataset.action === 'delete') {\n    const user = getUserFromCard(target);\n    if (!confirm('Are you sure you want to delete this user?'))\n      return;\n\n    try {\n      await deleteUser(apiUrl, user.id);\n      if (editingId === user.id) exitEditMode();\n      refreshUsers();\n    } catch (error) {\n      showError(error.message);\n    }\n  }\n});`,
     },
     {
       icon: '&#10004;', title: 'Diálogo de confirmação', file: 'app.js',
       color: 'var(--yellow)',
       body: 'O navegador exibe <code>confirm()</code>. Se o usuário cancelar, o fluxo para aqui. Se confirmar, continua.',
-      detail: `if (target.dataset.action === 'delete') {\n  const user = getUserFromCard(target);\n  if (!confirm('Are you sure you want to delete this user?'))\n    return; // usuário cancelou\n  // ...\n}`,
+      detail: `if (target.dataset.action === 'delete') {\n  const user = getUserFromCard(target);\n  if (!confirm('Are you sure you want to delete this user?'))\n    return;\n\n  try {\n    await deleteUser(apiUrl, user.id);\n    if (editingId === user.id) exitEditMode();\n    refreshUsers();\n  } catch (error) {\n    showError(error.message);\n  }\n}`,
     },
     {
       icon: '&#10147;', title: 'deleteUser() — fetch DELETE', file: 'delete.js',
