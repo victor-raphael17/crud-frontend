@@ -1,414 +1,841 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fluxo de Execução — Frontend</title>
-<style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  :root{
-    --bg:#0f172a;--surface:#1e293b;--border:#334155;
-    --text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;
-    --green:#4ade80;--yellow:#facc15;--red:#f87171;--purple:#a78bfa;
-    --orange:#fb923c;--pink:#f472b6;
-  }
-  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;overflow-x:hidden}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutorial — Construindo o Frontend CRUD</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
 
-  header{text-align:center;padding:2.5rem 1rem 1rem;position:relative}
-  header h1{font-size:1.6rem;font-weight:700;letter-spacing:-.5px}
-  header p{color:var(--muted);font-size:.85rem;margin-top:.35rem}
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --border: #334155;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            --accent: #38bdf8;
+            --green: #4ade80;
+            --yellow: #facc15;
+            --red: #f87171;
+            --purple: #a78bfa;
+            --orange: #fb923c;
+            --pink: #f472b6;
+        }
 
-  .method-tabs{display:flex;justify-content:center;gap:.5rem;padding:1rem;flex-wrap:wrap}
-  .method-tab{
-    padding:.45rem 1.1rem;border-radius:8px;border:1px solid var(--border);
-    background:var(--surface);color:var(--muted);cursor:pointer;font-size:.8rem;
-    font-weight:600;letter-spacing:.5px;transition:all .2s;user-select:none;
-  }
-  .method-tab:hover{border-color:var(--accent);color:var(--text)}
-  .method-tab.active{background:var(--accent);color:var(--bg);border-color:var(--accent)}
-  .method-tab[data-method="LOAD"]{--c:var(--accent)}
-  .method-tab[data-method="CREATE"]{--c:var(--green)}
-  .method-tab[data-method="EDIT_PUT"]{--c:var(--orange)}
-  .method-tab[data-method="EDIT_PATCH"]{--c:var(--purple)}
-  .method-tab[data-method="DELETE"]{--c:var(--red)}
-  .method-tab.active{background:var(--c);border-color:var(--c)}
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden
+        }
 
-  .flow-container{
-    max-width:520px;margin:0 auto;padding:1rem 1.5rem 3rem;position:relative;
-  }
+        header {
+            text-align: center;
+            padding: 2.5rem 1rem 1rem;
+            position: relative
+        }
 
-  .flow-line{
-    position:absolute;left:50%;top:0;bottom:0;width:2px;
-    background:linear-gradient(to bottom,transparent,var(--border) 80px,var(--border) calc(100% - 80px),transparent);
-    transform:translateX(-1px);z-index:0;
-  }
+        header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -.5px
+        }
 
-  .step{
-    position:relative;z-index:1;margin-bottom:1rem;
-    opacity:0;transform:translateY(18px);
-    transition:opacity .4s ease,transform .4s ease;
-  }
-  .step.visible{opacity:1;transform:translateY(0)}
+        header p {
+            color: var(--muted);
+            font-size: .85rem;
+            margin-top: .35rem
+        }
 
-  .step-card{
-    background:var(--surface);border:1px solid var(--border);border-radius:12px;
-    padding:1rem 1.15rem;position:relative;overflow:hidden;
-    transition:border-color .25s,box-shadow .25s;
-  }
-  .step-card:hover{border-color:var(--accent);box-shadow:0 0 20px rgba(56,189,248,.08)}
+        .method-tabs {
+            display: flex;
+            justify-content: center;
+            gap: .5rem;
+            padding: 1rem;
+            flex-wrap: wrap
+        }
 
-  .step-card::before{
-    content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
-    background:var(--step-color,var(--accent));border-radius:3px 0 0 3px;
-  }
+        .method-tab {
+            padding: .45rem 1.1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--muted);
+            cursor: pointer;
+            font-size: .8rem;
+            font-weight: 600;
+            letter-spacing: .5px;
+            transition: all .2s;
+            user-select: none;
+            position: relative;
+        }
 
-  .step-header{display:flex;align-items:center;gap:.6rem;margin-bottom:.45rem}
-  .step-icon{
-    width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;
-    font-size:.85rem;flex-shrink:0;
-    background:color-mix(in srgb,var(--step-color,var(--accent)) 15%,transparent);
-    color:var(--step-color,var(--accent));
-  }
-  .step-title{font-weight:600;font-size:.9rem}
-  .step-file{
-    font-size:.7rem;color:var(--muted);font-family:'Fira Code',monospace;
-    background:var(--bg);padding:.15rem .45rem;border-radius:4px;margin-left:auto;
-    white-space:nowrap;
-  }
+        .method-tab:hover {
+            border-color: var(--accent);
+            color: var(--text)
+        }
 
-  .step-body{font-size:.78rem;color:var(--muted);line-height:1.55;padding-left:2.4rem}
-  .step-body code{
-    background:var(--bg);padding:.1rem .35rem;border-radius:3px;
-    font-family:'Fira Code',monospace;font-size:.72rem;color:var(--accent);
-  }
+        .method-tab.active {
+            background: var(--accent);
+            color: var(--bg);
+            border-color: var(--accent)
+        }
 
-  .arrow{
-    text-align:center;position:relative;z-index:1;height:18px;
-    display:flex;align-items:center;justify-content:center;color:var(--border);font-size:.7rem;
-  }
+        .method-tab[data-method="SETUP"] {
+            --c: var(--accent)
+        }
 
-  .step-detail{
-    margin-top:.5rem;padding:.55rem .7rem;background:var(--bg);border-radius:6px;
-    font-size:.72rem;font-family:'Fira Code',monospace;color:var(--green);
-    line-height:1.6;margin-left:2.4rem;white-space:pre-wrap;
-    border:1px solid color-mix(in srgb,var(--step-color,var(--accent)) 20%,transparent);
-    max-height:0;overflow:hidden;opacity:0;
-    transition:max-height .35s ease,opacity .3s ease,margin-top .3s ease;
-  }
-  .step-detail.open{max-height:500px;opacity:1}
+        .method-tab[data-method="HTML"] {
+            --c: var(--purple)
+        }
 
-  .toggle-detail{
-    display:inline-flex;align-items:center;gap:.3rem;
-    font-size:.68rem;color:var(--accent);cursor:pointer;margin-top:.35rem;
-    margin-left:2.4rem;user-select:none;transition:color .2s;
-  }
-  .toggle-detail:hover{color:var(--text)}
-  .toggle-detail svg{width:12px;height:12px;transition:transform .25s}
-  .toggle-detail.open svg{transform:rotate(90deg)}
+        .method-tab[data-method="CSS"] {
+            --c: var(--pink)
+        }
 
-  .response-box{
-    margin-top:.5rem;padding:.6rem .8rem;border-radius:8px;
-    background:color-mix(in srgb,var(--green) 8%,var(--surface));
-    border:1px solid color-mix(in srgb,var(--green) 25%,transparent);
-    margin-left:2.4rem;
-  }
-  .response-box .status{font-weight:700;font-size:.78rem;color:var(--green)}
-  .response-box pre{
-    font-size:.7rem;font-family:'Fira Code',monospace;color:var(--muted);
-    margin-top:.3rem;line-height:1.5;white-space:pre-wrap;
-  }
+        .method-tab[data-method="GET"] {
+            --c: var(--green)
+        }
 
-  .legend{
-    display:flex;justify-content:center;gap:1.2rem;padding:.8rem;flex-wrap:wrap;
-    margin-top:-.5rem;margin-bottom:.5rem;
-  }
-  .legend-item{display:flex;align-items:center;gap:.35rem;font-size:.7rem;color:var(--muted)}
-  .legend-dot{width:8px;height:8px;border-radius:50%}
+        .method-tab[data-method="POST"] {
+            --c: var(--yellow)
+        }
 
-  @media(max-width:560px){
-    .flow-container{padding:1rem}
-    .step-file{display:none}
-  }
-</style>
+        .method-tab[data-method="DELETE"] {
+            --c: var(--red)
+        }
+
+        .method-tab[data-method="EDIT"] {
+            --c: var(--orange)
+        }
+
+        .method-tab.active {
+            background: var(--c);
+            border-color: var(--c)
+        }
+
+        .tab-number {
+            position: absolute;
+            top: -8px;
+            left: -8px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: var(--bg);
+            font-size: .6rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--bg);
+        }
+
+        .method-tab[data-method="SETUP"] .tab-number {
+            background: var(--accent)
+        }
+
+        .method-tab[data-method="HTML"] .tab-number {
+            background: var(--purple)
+        }
+
+        .method-tab[data-method="CSS"] .tab-number {
+            background: var(--pink)
+        }
+
+        .method-tab[data-method="GET"] .tab-number {
+            background: var(--green)
+        }
+
+        .method-tab[data-method="POST"] .tab-number {
+            background: var(--yellow);
+            color: var(--bg)
+        }
+
+        .method-tab[data-method="DELETE"] .tab-number {
+            background: var(--red)
+        }
+
+        .method-tab[data-method="EDIT"] .tab-number {
+            background: var(--orange)
+        }
+
+        .flow-container {
+            max-width: 540px;
+            margin: 0 auto;
+            padding: 1rem 1.5rem 3rem;
+            position: relative;
+        }
+
+        .flow-line {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, transparent, var(--border) 80px, var(--border) calc(100% - 80px), transparent);
+            transform: translateX(-1px);
+            z-index: 0;
+        }
+
+        .step {
+            position: relative;
+            z-index: 1;
+            margin-bottom: 1rem;
+            opacity: 0;
+            transform: translateY(18px);
+            transition: opacity .4s ease, transform .4s ease;
+        }
+
+        .step.visible {
+            opacity: 1;
+            transform: translateY(0)
+        }
+
+        .step-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem 1.15rem;
+            position: relative;
+            overflow: hidden;
+            transition: border-color .25s, box-shadow .25s;
+        }
+
+        .step-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(56, 189, 248, .08)
+        }
+
+        .step-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--step-color, var(--accent));
+            border-radius: 3px 0 0 3px;
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            margin-bottom: .45rem
+        }
+
+        .step-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .85rem;
+            flex-shrink: 0;
+            background: color-mix(in srgb, var(--step-color, var(--accent)) 15%, transparent);
+            color: var(--step-color, var(--accent));
+        }
+
+        .step-number {
+            position: absolute;
+            top: -.45rem;
+            right: -.45rem;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--step-color, var(--accent));
+            color: var(--bg);
+            font-size: .65rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--surface);
+        }
+
+        .step-title {
+            font-weight: 600;
+            font-size: .9rem
+        }
+
+        .step-file {
+            font-size: .7rem;
+            color: var(--muted);
+            font-family: 'Fira Code', monospace;
+            background: var(--bg);
+            padding: .15rem .45rem;
+            border-radius: 4px;
+            margin-left: auto;
+            white-space: nowrap;
+        }
+
+        .step-body {
+            font-size: .78rem;
+            color: var(--muted);
+            line-height: 1.55;
+            padding-left: 2.4rem
+        }
+
+        .step-body code {
+            background: var(--bg);
+            padding: .1rem .35rem;
+            border-radius: 3px;
+            font-family: 'Fira Code', monospace;
+            font-size: .72rem;
+            color: var(--accent);
+        }
+
+        .arrow {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--border);
+            font-size: .7rem;
+        }
+
+        .step-detail {
+            margin-top: .5rem;
+            padding: .55rem .7rem;
+            background: var(--bg);
+            border-radius: 6px;
+            font-size: .72rem;
+            font-family: 'Fira Code', monospace;
+            color: var(--green);
+            line-height: 1.6;
+            margin-left: 2.4rem;
+            white-space: pre-wrap;
+            border: 1px solid color-mix(in srgb, var(--step-color, var(--accent)) 20%, transparent);
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: max-height .35s ease, opacity .3s ease, margin-top .3s ease;
+        }
+
+        .step-detail.open {
+            max-height: 3400px;
+            opacity: 1
+        }
+
+        .toggle-detail {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            font-size: .68rem;
+            color: var(--accent);
+            cursor: pointer;
+            margin-top: .35rem;
+            margin-left: 2.4rem;
+            user-select: none;
+            transition: color .2s;
+        }
+
+        .toggle-detail:hover {
+            color: var(--text)
+        }
+
+        .toggle-detail svg {
+            width: 12px;
+            height: 12px;
+            transition: transform .25s
+        }
+
+        .toggle-detail.open svg {
+            transform: rotate(90deg)
+        }
+
+        .response-box {
+            margin-top: .5rem;
+            padding: .6rem .8rem;
+            border-radius: 8px;
+            background: color-mix(in srgb, var(--green) 8%, var(--surface));
+            border: 1px solid color-mix(in srgb, var(--green) 25%, transparent);
+            margin-left: 2.4rem;
+        }
+
+        .response-box .status {
+            font-weight: 700;
+            font-size: .78rem;
+            color: var(--green)
+        }
+
+        .response-box pre {
+            font-size: .7rem;
+            font-family: 'Fira Code', monospace;
+            color: var(--muted);
+            margin-top: .3rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .tip-box {
+            margin-top: .5rem;
+            padding: .5rem .7rem;
+            border-radius: 8px;
+            background: color-mix(in srgb, var(--yellow) 8%, var(--surface));
+            border: 1px solid color-mix(in srgb, var(--yellow) 25%, transparent);
+            margin-left: 2.4rem;
+            font-size: .73rem;
+            color: var(--yellow);
+            line-height: 1.5;
+        }
+
+        .tip-box strong {
+            color: var(--yellow)
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 1.2rem;
+            padding: .8rem;
+            flex-wrap: wrap;
+            margin-top: -.5rem;
+            margin-bottom: .5rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: .35rem;
+            font-size: .7rem;
+            color: var(--muted)
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%
+        }
+
+        .section-intro {
+            max-width: 540px;
+            margin: 0 auto;
+            padding: 0 1.5rem .5rem;
+            font-size: .8rem;
+            color: var(--muted);
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .section-intro strong {
+            color: var(--text)
+        }
+
+        @media(max-width:560px) {
+            .flow-container {
+                padding: 1rem
+            }
+
+            .step-file {
+                display: none
+            }
+        }
+    </style>
 </head>
+
 <body>
 
-<header>
-  <h1>Fluxo de Execução do Frontend</h1>
-  <p>Da interação do usuário no navegador até a atualização do DOM</p>
-</header>
+    <header>
+        <h1>Tutorial: Construindo o Frontend CRUD</h1>
+        <p>Passo a passo — do zero até a interface completa consumindo a API PHP</p>
+    </header>
 
-<div class="method-tabs" id="tabs">
-  <div class="method-tab active" data-method="LOAD">Carregar</div>
-  <div class="method-tab" data-method="CREATE">Criar</div>
-  <div class="method-tab" data-method="EDIT_PUT">Editar (PUT)</div>
-  <div class="method-tab" data-method="EDIT_PATCH">Editar (PATCH)</div>
-  <div class="method-tab" data-method="DELETE">Deletar</div>
-</div>
+    <div class="method-tabs" id="tabs">
+        <div class="method-tab active" data-method="SETUP"><span class="tab-number">1</span>Setup</div>
+        <div class="method-tab" data-method="HTML"><span class="tab-number">2</span>HTML</div>
+        <div class="method-tab" data-method="CSS"><span class="tab-number">3</span>CSS</div>
+        <div class="method-tab" data-method="GET"><span class="tab-number">4</span>Listar</div>
+        <div class="method-tab" data-method="POST"><span class="tab-number">5</span>Criar</div>
+        <div class="method-tab" data-method="DELETE"><span class="tab-number">6</span>Deletar</div>
+        <div class="method-tab" data-method="EDIT"><span class="tab-number">7</span>Editar</div>
+    </div>
 
-<div class="legend">
-  <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div> Evento</div>
-  <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div> App Logic</div>
-  <div class="legend-item"><div class="legend-dot" style="background:var(--yellow)"></div> Decisão</div>
-  <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div> Fetch API</div>
-  <div class="legend-item"><div class="legend-dot" style="background:var(--pink)"></div> DOM</div>
-  <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> Resultado</div>
-</div>
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-dot" style="background:var(--accent)"></div> Conceito
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background:var(--purple)"></div> Estrutura
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background:var(--yellow)"></div> Explicação
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background:var(--orange)"></div> Código
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background:var(--green)"></div> Resultado
+        </div>
+    </div>
 
-<div class="flow-container">
-  <div class="flow-line"></div>
-  <div id="flow"></div>
-</div>
+    <div class="section-intro" id="intro"></div>
 
-<script>
-const flows = {
-  LOAD: [
-    {
-      icon: '&#9656;', title: 'DOMContentLoaded', file: 'app.js',
-      color: 'var(--accent)',
-      body: 'O navegador termina de carregar o HTML. O evento <code>DOMContentLoaded</code> dispara e chama <code>renderUsers(apiUrl)</code> diretamente.',
-      detail: `document.addEventListener('DOMContentLoaded', () => renderUsers(apiUrl));`,
-    },
-    {
-      icon: '&#9776;', title: 'renderUsers()', file: 'render.js',
-      color: 'var(--pink)',
-      body: 'Recebe apenas a URL. Chama <code>getUsers()</code> para buscar os dados na API e armazena o resultado em <code>usersCache</code> para consulta posterior.',
-      detail: `export async function renderUsers(apiUrl) {\n  const users = await getUsers(apiUrl);\n  usersCache = users;\n  const usersSection = document.getElementById('users');\n\n  if (users.length === 0) {\n    usersSection.innerHTML =\n      '<p class="text-muted">No users found.</p>';\n    return;\n  }\n\n  usersSection.innerHTML = '';\n\n  users.forEach((user) => {\n    const userDiv = document.createElement('div');\n    userDiv.classList.add('col-md-3');\n\n    userDiv.innerHTML = \\\`\n      <div class="card user-card h-100" id="\\\${user.id}">\n        <div class="card-body">\n          <h5 class="card-title">\\\${user.name}</h5>\n          <p class="card-text mb-1">\n            <strong>Age:</strong> \\\${user.age}\n          </p>\n          <p class="card-text">\n            <strong>Email:</strong> \\\${user.email}\n          </p>\n        </div>\n        <div class="card-footer d-flex gap-2">\n          <button class="btn btn-sm btn-outline-dark flex-fill"\n                  data-action="edit">Edit</button>\n          <button class="btn btn-sm btn-outline-danger flex-fill"\n                  data-action="delete">Delete</button>\n        </div>\n      </div>\\\`;\n\n    usersSection.appendChild(userDiv);\n  });\n}`,
-    },
-    {
-      icon: '&#10147;', title: 'getUsers() — fetch GET', file: 'read.js',
-      color: 'var(--orange)',
-      body: 'Faz <code>fetch(apiUrl)</code> com método <code>GET</code> para buscar a lista de usuários na API.',
-      detail: `export async function getUsers(apiUrl) {\n  const response = await fetch(apiUrl);\n  const data = await response.json();\n\n  if (!response.ok) {\n    throw new Error(data.error || 'Failed to fetch users');\n  }\n\n  return data.users;\n}`,
-    },
-    {
-      icon: '&#8644;', title: 'API responde', file: '',
-      color: 'var(--orange)',
-      body: 'A API retorna <code>200 OK</code> com o JSON <code>{ "users": [...] }</code>. O <code>getUsers()</code> extrai e retorna o array <code>data.users</code>.',
-      response: { status: '200 OK', body: '{\n  "users": [\n    { "name": "João", "age": 25,\n      "email": "joao@email.com", "id": 1 }\n  ]\n}' },
-    },
-    {
-      icon: '&#9638;', title: 'Renderiza os cards', file: 'render.js',
-      color: 'var(--pink)',
-      body: 'Para cada usuário, cria um card Bootstrap com nome, idade, email e botões <code>Edit</code> e <code>Delete</code>. O card usa a classe <code>user-card</code> e o <code>id</code> do usuário como atributo <code>id</code> do elemento.',
-      detail: `users.forEach((user) => {\n  const userDiv = document.createElement('div');\n  userDiv.classList.add('col-md-3');\n  userDiv.innerHTML = \`\n    <div class="card user-card h-100" id="\${user.id}">\n      <div class="card-body">\n        <h5 class="card-title">\${user.name}</h5>\n        <p class="card-text mb-1"><strong>Age:</strong> \${user.age}</p>\n        <p class="card-text"><strong>Email:</strong> \${user.email}</p>\n      </div>\n      <div class="card-footer d-flex gap-2">\n        <button class="btn btn-sm btn-outline-dark flex-fill"\n                data-action="edit">Edit</button>\n        <button class="btn btn-sm btn-outline-danger flex-fill"\n                data-action="delete">Delete</button>\n      </div>\n    </div>\`;\n\n  usersSection.appendChild(userDiv);\n});`,
-    },
-    {
-      icon: '&#10003;', title: 'UI atualizada', file: '',
-      color: 'var(--green)',
-      body: 'Os cards são exibidos na tela. Os dados dos usuários ficam em cache no <code>usersCache</code> (em <code>render.js</code>). Os cliques em <code>Edit</code> e <code>Delete</code> são capturados por event delegation no <code>#users</code> via <code>data-action</code> (definido no <code>app.js</code>).',
-    },
-  ],
+    <div class="flow-container">
+        <div class="flow-line"></div>
+        <div id="flow"></div>
+    </div>
 
-  CREATE: [
-    {
-      icon: '&#9656;', title: 'Usuário preenche o formulário', file: 'index.html',
-      color: 'var(--accent)',
-      body: 'O usuário insere <code>name</code>, <code>age</code> e <code>email</code> nos campos do formulário e clica em <code>Create</code>.',
-      detail: `<form id="create-user-form">\n  <input type="text" id="name" required>\n  <input type="number" id="age" required>\n  <input type="email" id="email" required>\n  <button type="submit">Create</button>\n</form>`,
-    },
-    {
-      icon: '&#9881;', title: 'Evento submit', file: 'app.js',
-      color: 'var(--accent)',
-      body: 'O listener de <code>submit</code> captura o evento, previne o reload da página e coleta os valores dos campos.',
-      detail: `form.addEventListener('submit', async (event) => {\n  event.preventDefault();\n\n  const name = document.getElementById('name').value;\n  const age = document.getElementById('age').value;\n  const email = document.getElementById('email').value;\n\n  hideError();\n\n  try {\n    if (editingId !== null) {\n      const changed = {};\n      if (name !== originalUser.name) changed.name = name;\n      if (Number(age) !== originalUser.age) changed.age = age;\n      if (email !== originalUser.email) changed.email = email;\n\n      if (Object.keys(changed).length === 0) {\n        exitEditMode();\n        return;\n      }\n\n      const allChanged = Object.keys(changed).length === 3;\n      if (allChanged) {\n        await updateUser(apiUrl, editingId, { name, age, email });\n      } else {\n        await patchUser(apiUrl, editingId, changed);\n      }\n    } else {\n      await createUser(apiUrl, { name, age, email });\n    }\n\n    exitEditMode();\n    renderUsers(apiUrl);\n  } catch (error) {\n    showError(error.message);\n  }\n});`,
-    },
-    {
-      icon: '&#10004;', title: 'Verifica modo de edição', file: 'app.js',
-      color: 'var(--yellow)',
-      body: 'Checa se <code>editingId</code> é <code>null</code>. Como estamos criando, o fluxo segue para <code>createUser()</code>.',
-      detail: `if (editingId !== null) {\n  // fluxo de edição (PUT ou PATCH)\n} else {\n  // editingId === null → criação\n  await createUser(apiUrl, { name, age, email });\n}`,
-    },
-    {
-      icon: '&#10147;', title: 'createUser() — fetch POST', file: 'create.js',
-      color: 'var(--orange)',
-      body: 'Envia <code>POST /api/users</code> com o corpo JSON. Converte <code>age</code> para <code>Number</code> antes de enviar.',
-      detail: `export async function createUser(apiUrl, { name, age, email }) {\n  const response = await fetch(apiUrl, {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify({ name, age: Number(age), email }),\n  });\n\n  const data = await response.json();\n\n  if (!response.ok) {\n    throw new Error(data.error || 'Failed to create user');\n  }\n\n  return data;\n}`,
-    },
-    {
-      icon: '&#8644;', title: 'API responde', file: '',
-      color: 'var(--orange)',
-      body: 'A API valida os campos e retorna <code>201 Created</code> com o usuário criado (incluindo o <code>id</code> gerado).',
-      response: { status: '201 Created', body: '{\n  "name": "Ana", "age": 30,\n  "email": "ana@email.com", "id": 2\n}' },
-    },
-    {
-      icon: '&#8635;', title: 'exitEditMode() + renderUsers()', file: 'app.js',
-      color: 'var(--purple)',
-      body: 'Limpa o formulário com <code>form.reset()</code> e chama <code>renderUsers(apiUrl)</code> para recarregar a lista de cards.',
-      detail: `function exitEditMode() {\n  editingId = null;\n  originalUser = null;\n  formTitle.textContent = 'Create User';\n  submitBtn.textContent = 'Create';\n  cancelBtn.style.display = 'none';\n  form.reset();\n}\n\nexitEditMode();\nrenderUsers(apiUrl);`,
-    },
-    {
-      icon: '&#10003;', title: 'Novo card aparece na tela', file: '',
-      color: 'var(--green)',
-      body: 'A lista é re-renderizada com o novo usuário. O formulário volta ao estado inicial de criação.',
-    },
-  ],
+    <script>
+        const bt = String.fromCharCode(96);
+        const flows = {
 
-  EDIT_PUT: [
-    {
-      icon: '&#9656;', title: 'Clique no botão Edit', file: 'app.js',
-      color: 'var(--accent)',
-      body: 'O usuário clica em <code>Edit</code> no card. O event delegation no <code>#users</code> captura o clique via <code>data-action</code> e busca os dados do usuário no <code>usersCache</code> via <code>getUserFromCard()</code> → <code>findUserById()</code>.',
-      detail: `usersSection.addEventListener('click', async (event) => {\n  const { target } = event;\n\n  if (target.dataset.action === 'edit') {\n    enterEditMode(getUserFromCard(target));\n  }\n});\n\nfunction getUserFromCard(button) {\n  const card = button.closest('.user-card');\n  return findUserById(Number(card.id));\n}`,
-    },
-    {
-      icon: '&#9638;', title: 'enterEditMode(user)', file: 'app.js',
-      color: 'var(--purple)',
-      body: 'Salva o <code>id</code> em <code>editingId</code> e uma cópia do usuário em <code>originalUser</code>. Preenche o formulário e muda o botão para <code>Update</code>.',
-      detail: `function enterEditMode(user) {\n  editingId = user.id;\n  originalUser = { ...user };\n  document.getElementById('name').value = user.name;\n  document.getElementById('age').value = user.age;\n  document.getElementById('email').value = user.email;\n  formTitle.textContent = 'Edit User';\n  submitBtn.textContent = 'Update';\n  cancelBtn.style.display = '';\n  document.getElementById('name').focus();\n}`,
-    },
-    {
-      icon: '&#9881;', title: 'Usuário altera TODOS os campos', file: 'index.html',
-      color: 'var(--accent)',
-      body: 'O usuário modifica os 3 campos (<code>name</code>, <code>age</code> e <code>email</code>) e clica em <code>Update</code>.',
-    },
-    {
-      icon: '&#10004;', title: 'Detecção de mudanças (diff)', file: 'app.js',
-      color: 'var(--yellow)',
-      body: 'Compara cada campo com <code>originalUser</code>. Como os <strong>3 campos</strong> mudaram, <code>allChanged</code> é <code>true</code> → usa <code>PUT</code>.',
-      detail: `const changed = {};\nif (name !== originalUser.name) changed.name = name;\nif (Number(age) !== originalUser.age) changed.age = age;\nif (email !== originalUser.email) changed.email = email;\n\nif (Object.keys(changed).length === 0) {\n  exitEditMode(); // nada mudou\n  return;\n}\n\nconst allChanged = Object.keys(changed).length === 3;\n// allChanged === true → PUT`,
-    },
-    {
-      icon: '&#10147;', title: 'updateUser() — fetch PUT', file: 'update.js',
-      color: 'var(--orange)',
-      body: 'Envia <code>PUT /api/users?id=1</code> com <strong>todos</strong> os campos no corpo. Converte <code>age</code> para <code>Number</code>.',
-      detail: `export async function updateUser(apiUrl, id, { name, age, email }) {\n  const response = await fetch(\`\${apiUrl}?id=\${id}\`, {\n    method: 'PUT',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify({ name, age: Number(age), email }),\n  });\n\n  const data = await response.json();\n\n  if (!response.ok) {\n    throw new Error(data.error || 'Failed to update user');\n  }\n\n  return data;\n}`,
-    },
-    {
-      icon: '&#8644;', title: 'API responde', file: '',
-      color: 'var(--orange)',
-      body: 'A API valida todos os campos, atualiza o usuário e retorna <code>200 OK</code>.',
-      response: { status: '200 OK', body: '{\n  "name": "João Silva", "age": 26,\n  "email": "joao.silva@email.com", "id": 1\n}' },
-    },
-    {
-      icon: '&#8635;', title: 'exitEditMode() + renderUsers()', file: 'app.js',
-      color: 'var(--purple)',
-      body: 'Limpa <code>editingId</code> e <code>originalUser</code>, restaura o formulário ao modo de criação e re-renderiza a lista.',
-      detail: `exitEditMode();\nrenderUsers(apiUrl);`,
-    },
-    {
-      icon: '&#10003;', title: 'Card atualizado na tela', file: '',
-      color: 'var(--green)',
-      body: 'A lista é re-renderizada com os dados atualizados. O formulário volta ao estado <code>Create User</code>.',
-    },
-  ],
+            // ═══════════════════════════════════════
+            // ETAPA 1 — SETUP
+            // ═══════════════════════════════════════
+            SETUP: {
+                intro: 'Antes de escrever qualquer código, vamos <strong>organizar o projeto</strong> e entender o que será necessário.',
+                steps: [
+                    {
+                        icon: '&#128161;', title: 'O que vamos construir?', file: '',
+                        color: 'var(--accent)',
+                        body: 'Uma interface web que consome uma <strong>API REST em PHP</strong>. O frontend será feito com <strong>JavaScript puro</strong> (Vanilla JS) usando <strong>ES Modules</strong> e <strong>Bootstrap 5</strong> para estilização.',
+                        tip: 'Pré-requisito: a API PHP deve estar rodando em <code>http://localhost:8000</code>. Inicie-a com <code>php -S localhost:8000</code> dentro da pasta <code>/api</code>.',
+                    },
+                    {
+                        icon: '&#128193;', title: 'Crie a estrutura de pastas', file: 'terminal',
+                        color: 'var(--purple)',
+                        body: 'Dentro da pasta <code>frontend/</code>, crie a seguinte árvore de diretórios. Cada pasta tem uma responsabilidade clara.',
+                        detail: `frontend/\n└── src/\n    ├── index.html          ← página principal\n    ├── app.js              ← orquestrador (imports + lógica)\n    ├── styles/\n    │   ├── reset.css        ← CSS reset moderno\n    │   └── style.css        ← estilos personalizados\n    └── scripts/\n        ├── api/\n        │   ├── read.js      ← GET (listar)\n        │   ├── create.js    ← POST (criar)\n        │   ├── update.js    ← PUT + PATCH (editar)\n        │   └── delete.js    ← DELETE (deletar)\n        └── dom/\n            └── render.js    ← renderização dos cards`,
+                    },
+                    {
+                        icon: '&#9881;', title: 'Entenda a arquitetura', file: '',
+                        color: 'var(--yellow)',
+                        body: 'Separamos o código em <strong>camadas</strong>: os arquivos em <code>scripts/api/</code> só fazem <code>fetch</code> (comunicam com o servidor). O arquivo <code>scripts/dom/render.js</code> só manipula o DOM (visual). O <code>app.js</code> orquestra tudo.',
+                        tip: '<strong>Por que separar?</strong> Cada arquivo tem uma única responsabilidade. Se a API mudar, você altera só a pasta <code>api/</code>. Se o layout mudar, altera só <code>render.js</code>. Isso é o princípio da <strong>Separação de Responsabilidades</strong>.',
+                    },
+                    {
+                        icon: '&#128230;', title: 'ES Modules', file: '',
+                        color: 'var(--yellow)',
+                        body: 'Usamos <code>&lt;script type="module"&gt;</code> no HTML. Isso ativa o sistema de módulos nativo do navegador: cada arquivo pode <code>export</code> funções e outro pode <code>import</code>.',
+                        detail: `// create.js exporta uma função:\nexport async function createUser(apiUrl, data) { ... }\n\n// app.js importa ela:\nimport { createUser } from './scripts/api/create.js';`,
+                        tip: '<strong>Vantagem:</strong> sem precisar de bundler (Webpack, Vite). O navegador resolve os imports sozinho. Cada arquivo é carregado automaticamente.',
+                    },
+                    {
+                        icon: '&#10003;', title: 'Pronto para começar!', file: '',
+                        color: 'var(--green)',
+                        body: 'Com a estrutura de pastas criada e os conceitos entendidos, vamos para a próxima etapa: construir o <strong>HTML</strong>.',
+                        response: { status: 'Estrutura Criada', body: 'frontend/src/\n├── index.html       (vazio por enquanto)\n├── app.js           (vazio por enquanto)\n├── styles/          (vazio por enquanto)\n└── scripts/api/ + dom/  (vazio por enquanto)' },
+                    },
+                ],
+            },
 
-  EDIT_PATCH: [
-    {
-      icon: '&#9656;', title: 'Clique no botão Edit', file: 'app.js',
-      color: 'var(--accent)',
-      body: 'O usuário clica em <code>Edit</code> no card. O event delegation no <code>#users</code> captura o clique via <code>data-action</code> e busca os dados do usuário no <code>usersCache</code> via <code>getUserFromCard()</code> → <code>findUserById()</code>.',
-      detail: `usersSection.addEventListener('click', async (event) => {\n  const { target } = event;\n\n  if (target.dataset.action === 'edit') {\n    enterEditMode(getUserFromCard(target));\n  }\n});\n\nfunction getUserFromCard(button) {\n  const card = button.closest('.user-card');\n  return findUserById(Number(card.id));\n}`,
-    },
-    {
-      icon: '&#9638;', title: 'enterEditMode(user)', file: 'app.js',
-      color: 'var(--purple)',
-      body: 'Salva o <code>id</code> em <code>editingId</code> e uma cópia do usuário em <code>originalUser</code>. Preenche o formulário e muda o botão para <code>Update</code>.',
-      detail: `function enterEditMode(user) {\n  editingId = user.id;\n  originalUser = { ...user };\n  document.getElementById('name').value = user.name;\n  document.getElementById('age').value = user.age;\n  document.getElementById('email').value = user.email;\n  formTitle.textContent = 'Edit User';\n  submitBtn.textContent = 'Update';\n  cancelBtn.style.display = '';\n  document.getElementById('name').focus();\n}`,
-    },
-    {
-      icon: '&#9881;', title: 'Usuário altera ALGUNS campos', file: 'index.html',
-      color: 'var(--accent)',
-      body: 'O usuário modifica apenas <strong>1 ou 2</strong> campos (ex: só a <code>age</code>) e clica em <code>Update</code>.',
-    },
-    {
-      icon: '&#10004;', title: 'Detecção de mudanças (diff)', file: 'app.js',
-      color: 'var(--yellow)',
-      body: 'Compara cada campo com <code>originalUser</code>. Como mudaram <strong>menos de 3</strong> campos, <code>allChanged</code> é <code>false</code> → usa <code>PATCH</code>.',
-      detail: `const changed = {};\nif (name !== originalUser.name) changed.name = name;\nif (Number(age) !== originalUser.age) changed.age = age;\nif (email !== originalUser.email) changed.email = email;\n\n// changed = { age: "27" } → só 1 campo\nconst allChanged = Object.keys(changed).length === 3;\n// allChanged === false → PATCH`,
-    },
-    {
-      icon: '&#10147;', title: 'patchUser() — fetch PATCH', file: 'update.js',
-      color: 'var(--orange)',
-      body: 'Envia <code>PATCH /api/users?id=1</code> com <strong>apenas</strong> os campos alterados. Converte <code>age</code> para <code>Number</code> se presente.',
-      detail: `export async function patchUser(apiUrl, id, fields) {\n  if (fields.age !== undefined) {\n    fields.age = Number(fields.age);\n  }\n\n  const response = await fetch(\`\${apiUrl}?id=\${id}\`, {\n    method: 'PATCH',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify(fields),\n  });\n\n  const data = await response.json();\n\n  if (!response.ok) {\n    throw new Error(data.error || 'Failed to patch user');\n  }\n\n  return data;\n}`,
-    },
-    {
-      icon: '&#8644;', title: 'API responde', file: '',
-      color: 'var(--orange)',
-      body: 'A API valida apenas os campos enviados, faz merge parcial e retorna <code>200 OK</code> com o usuário completo.',
-      response: { status: '200 OK', body: '{\n  "name": "João", "age": 27,\n  "email": "joao@email.com", "id": 1\n}' },
-    },
-    {
-      icon: '&#8635;', title: 'exitEditMode() + renderUsers()', file: 'app.js',
-      color: 'var(--purple)',
-      body: 'Limpa <code>editingId</code> e <code>originalUser</code>, restaura o formulário ao modo de criação e re-renderiza a lista.',
-      detail: `exitEditMode();\nrenderUsers(apiUrl);`,
-    },
-    {
-      icon: '&#10003;', title: 'Card atualizado na tela', file: '',
-      color: 'var(--green)',
-      body: 'A lista é re-renderizada. Apenas o campo alterado mudou no card; os demais permanecem inalterados.',
-    },
-  ],
+            // ═══════════════════════════════════════
+            // ETAPA 2 — HTML
+            // ═══════════════════════════════════════
+            HTML: {
+                intro: 'Vamos construir o <strong>index.html</strong> — a estrutura visual da aplicação usando Bootstrap 5.',
+                steps: [
+                    {
+                        icon: '&#128196;', title: 'Esqueleto do HTML', file: 'index.html',
+                        color: 'var(--accent)',
+                        body: 'Comece com a estrutura básica: <code>&lt;!DOCTYPE html&gt;</code>, meta tags, e os links para CSS. Usamos <strong>3 folhas de estilo</strong> em ordem específica.',
+                        detail: `<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport"\n    content="width=device-width, initial-scale=1.0">\n  <title>CRUD JS Project<\/title>\n\n  <!-- 1. Nosso reset primeiro -->\n  <link rel="stylesheet" href="styles/reset.css">\n\n  <!-- 2. Bootstrap via CDN -->\n  <link href="https://cdn.jsdelivr.net/npm/\n    bootstrap@5.3.8/dist/css/bootstrap.min.css"\n    rel="stylesheet">\n\n  <!-- 3. Nosso CSS por último (sobrescreve) -->\n  <link rel="stylesheet" href="styles/style.css">\n<\/head>\n<body>\n  <!-- conteúdo aqui -->\n<\/body>\n<\/html>`,
+                        tip: '<strong>Ordem importa!</strong> O reset.css normaliza o comportamento padrão, o Bootstrap adiciona os componentes, e o style.css permite que você sobrescreva o que precisar.',
+                    },
+                    {
+                        icon: '&#9776;', title: 'Header da página', file: 'index.html',
+                        color: 'var(--purple)',
+                        body: 'Adicione um cabeçalho escuro com o título do projeto usando classes do Bootstrap.',
+                        detail: `<body>\n  <header class="bg-dark text-white py-4 mb-4">\n    <h1 class="text-center m-0">PHP/JS CRUD Project<\/h1>\n  <\/header>\n\n  <main class="container">\n    <!-- seções aqui -->\n  <\/main>\n<\/body>`,
+                    },
+                    {
+                        icon: '&#127922;', title: 'Seção de usuários (cards)', file: 'index.html',
+                        color: 'var(--purple)',
+                        body: 'Crie um card com uma <code>&lt;div id="users"&gt;</code> vazia. É aqui que o JavaScript vai inserir os cards de cada usuário dinamicamente.',
+                        detail: `<main class="container">\n  <section class="card p-4 mb-4">\n    <h2 class="mb-3">Users</h2>\n    <div class="row g-3" id="users">\n      <!-- cards serão inseridos pelo JS -->\n    </div>\n  </section>\n\n  <!-- formulário vem aqui -->\n</main>`,
+                        tip: '<strong>id="users"</strong> é essencial — o JavaScript usa esse id para encontrar onde inserir os cards. A classe <code>row g-3</code> cria um grid responsivo do Bootstrap.',
+                    },
+                    {
+                        icon: '&#9998;', title: 'Formulário de criação', file: 'index.html',
+                        color: 'var(--purple)',
+                        body: 'Adicione o formulário com 3 campos (<code>name</code>, <code>age</code>, <code>email</code>), um botão de submit e um botão Cancel (inicialmente escondido, usado na edição).',
+                        detail: `<section class="card p-4">\n  <h2 class="mb-3" id="form-title">Create User</h2>\n\n  <!-- Alerta de erro (escondido por padrão) -->\n  <div id="form-error"\n    class="alert alert-danger d-none"\n    role="alert"></div>\n\n  <form id="create-user-form"\n    class="row g-3 align-items-end">\n\n    <div class="col-md-4">\n      <label for="name" class="form-label">Name</label>\n      <input type="text" class="form-control"\n        id="name" name="name" required>\n    </div>\n\n    <div class="col-md-3">\n      <label for="age" class="form-label">Age</label>\n      <input type="number" class="form-control"\n        id="age" name="age" required>\n    </div>\n\n    <div class="col-md-3">\n      <label for="email" class="form-label">Email</label>\n      <input type="email" class="form-control"\n        id="email" name="email" required>\n    </div>\n\n    <div class="col-md-2 d-flex gap-2">\n      <button type="submit"\n        class="btn btn-dark flex-fill">Create</button>\n      <button type="button" id="cancel-edit"\n        class="btn btn-outline-secondary"\n        style="display:none;">Cancel</button>\n    </div>\n  </form>\n</section>`,
+                        tip: '<strong>IDs importantes:</strong> <code>form-title</code> muda de "Create" para "Edit". <code>form-error</code> mostra erros da API. <code>cancel-edit</code> fica escondido até entrar no modo de edição.',
+                    },
+                    {
+                        icon: '&#9889;', title: 'Carregue o app.js como module', file: 'index.html',
+                        color: 'var(--orange)',
+                        body: 'Antes de fechar o <code>&lt;/body&gt;</code>, adicione o script principal. O <code>type="module"</code> ativa ES Modules e garante que o script execute após o DOM estar pronto.',
+                        detail: `  <!-- Antes de <\/body> -->\n  <script type="module" src="app.js"><\/script>\n<\/body>\n<\/html>`,
+                        tip: 'Scripts do tipo <code>module</code> são automaticamente <strong>defer</strong> — executam após o HTML ser parseado. Por isso não precisamos de <code>DOMContentLoaded</code> para os imports, mas usamos para a renderização inicial.',
+                    },
+                    {
+                        icon: '&#10003;', title: 'HTML completo!', file: '',
+                        color: 'var(--green)',
+                        body: 'O HTML está pronto. Se abrir no navegador agora, vai ver o layout com header, card vazio e formulário — mas sem funcionalidade ainda.',
+                        response: { status: 'Visual base pronto', body: '┌──────────────────────────────────┐\n│      PHP/JS CRUD Project         │\n├──────────────────────────────────┤\n│  Users                           │\n│  (vazio — JS ainda não roda)     │\n│  ──────────────────────────────  │\n│  Name [___] Age [__] Email [___] │\n│  [Create]                        │\n└──────────────────────────────────┘' },
+                    },
+                ],
+            },
 
-  DELETE: [
-    {
-      icon: '&#9656;', title: 'Clique no botão Delete', file: 'app.js',
-      color: 'var(--accent)',
-      body: 'O usuário clica em <code>Delete</code> no card. O event delegation no <code>#users</code> captura o clique via <code>data-action</code> e busca os dados do usuário no <code>usersCache</code> via <code>getUserFromCard()</code> → <code>findUserById()</code>.',
-      detail: `usersSection.addEventListener('click', async (event) => {\n  const { target } = event;\n\n  if (target.dataset.action === 'edit') {\n    enterEditMode(getUserFromCard(target));\n  }\n\n  if (target.dataset.action === 'delete') {\n    const user = getUserFromCard(target);\n    if (!confirm('Are you sure you want to delete this user?'))\n      return;\n\n    try {\n      await deleteUser(apiUrl, user.id);\n      if (editingId === user.id) exitEditMode();\n      renderUsers(apiUrl);\n    } catch (error) {\n      showError(error.message);\n    }\n  }\n});`,
-    },
-    {
-      icon: '&#10004;', title: 'Diálogo de confirmação', file: 'app.js',
-      color: 'var(--yellow)',
-      body: 'O navegador exibe <code>confirm()</code>. Se o usuário cancelar, o fluxo para aqui. Se confirmar, continua.',
-      detail: `if (target.dataset.action === 'delete') {\n  const user = getUserFromCard(target);\n  if (!confirm('Are you sure you want to delete this user?'))\n    return;\n\n  try {\n    await deleteUser(apiUrl, user.id);\n    if (editingId === user.id) exitEditMode();\n    renderUsers(apiUrl);\n  } catch (error) {\n    showError(error.message);\n  }\n}`,
-    },
-    {
-      icon: '&#10147;', title: 'deleteUser() — fetch DELETE', file: 'delete.js',
-      color: 'var(--orange)',
-      body: 'Envia <code>DELETE /api/users?id=1</code> sem corpo na requisição.',
-      detail: `export async function deleteUser(apiUrl, id) {\n  const response = await fetch(\`\${apiUrl}?id=\${id}\`, {\n    method: 'DELETE',\n  });\n\n  const data = await response.json();\n\n  if (!response.ok) {\n    throw new Error(data.error || 'Failed to delete user');\n  }\n\n  return data;\n}`,
-    },
-    {
-      icon: '&#8644;', title: 'API responde', file: '',
-      color: 'var(--orange)',
-      body: 'A API remove o usuário do <code>data.json</code> e retorna <code>200 OK</code> com o objeto deletado.',
-      response: { status: '200 OK', body: '{\n  "deleted": {\n    "name": "João", "age": 25,\n    "email": "joao@email.com", "id": 1\n  }\n}' },
-    },
-    {
-      icon: '&#10004;', title: 'Verifica modo de edição', file: 'app.js',
-      color: 'var(--yellow)',
-      body: 'Se o usuário deletado era o que estava sendo editado (<code>editingId === user.id</code>), chama <code>exitEditMode()</code> para limpar o formulário.',
-      detail: `if (editingId === user.id) exitEditMode();`,
-    },
-    {
-      icon: '&#8635;', title: 'renderUsers(apiUrl)', file: 'app.js',
-      color: 'var(--purple)',
-      body: 'Re-renderiza a lista de cards chamando <code>renderUsers(apiUrl)</code> diretamente.',
-      detail: `renderUsers(apiUrl);`,
-    },
-    {
-      icon: '&#10003;', title: 'Card removido da tela', file: '',
-      color: 'var(--green)',
-      body: 'A lista é re-renderizada sem o usuário deletado. Se a lista ficou vazia, exibe <code>"No users found."</code>.',
-    },
-  ],
-};
+            // ═══════════════════════════════════════
+            // ETAPA 3 — CSS
+            // ═══════════════════════════════════════
+            CSS: {
+                intro: 'Dois arquivos CSS pequenos mas importantes: um <strong>reset moderno</strong> e os <strong>estilos customizados</strong>.',
+                steps: [
+                    {
+                        icon: '&#128161;', title: 'Por que usar um CSS Reset?', file: '',
+                        color: 'var(--accent)',
+                        body: 'Cada navegador tem estilos padrão diferentes (margens, fontes, tamanhos). O reset normaliza tudo para que seu CSS funcione de forma consistente em qualquer browser.',
+                    },
+                    {
+                        icon: '&#127912;', title: 'Crie o reset.css', file: 'styles/reset.css',
+                        color: 'var(--orange)',
+                        body: 'Um reset moderno e completo. Cada regra resolve um problema específico de inconsistência entre navegadores.',
+                        detail: `/* 1. Box-sizing intuitivo */\n*, *::before, *::after {\n  box-sizing: border-box;\n}\n\n/* 2. Remove margens padrão */\n*:not(dialog) {\n  margin: 0;\n}\n\n/* 3. Animações respeitam preferência do SO */\n@media (prefers-reduced-motion: no-preference) {\n  html {\n    interpolate-size: allow-keywords;\n  }\n}\n\nbody {\n  /* 4. Line-height acessível */\n  line-height: 1.5;\n  /* 5. Texto mais nítido */\n  -webkit-font-smoothing: antialiased;\n}\n\n/* 6. Imagens e mídias responsivas */\nimg, picture, video, canvas, svg {\n  display: block;\n  max-width: 100%;\n}\n\n/* 7. Inputs herdam a fonte do pai */\ninput, button, textarea, select {\n  font: inherit;\n}\n\n/* 8. Textos não vazam do container */\np, h1, h2, h3, h4, h5, h6 {\n  overflow-wrap: break-word;\n}\n\n/* 9. Quebra de linha inteligente */\np { text-wrap: pretty; }\nh1, h2, h3, h4, h5, h6 { text-wrap: balance; }\n\n/* 10. Contexto de stacking */\n#root, #__next { isolation: isolate; }\n\nul { list-style: none; margin: 0; padding: 0; }`,
+                        tip: 'Esse reset é baseado no "Modern CSS Reset" de Josh Comeau — uma referência popular na comunidade frontend.',
+                    },
+                    {
+                        icon: '&#127912;', title: 'Crie o style.css', file: 'styles/style.css',
+                        color: 'var(--orange)',
+                        body: 'Apenas duas propriedades! O Bootstrap cuida de quase tudo. Só precisamos garantir que o body ocupe a tela toda e tenha o fundo cinza claro.',
+                        detail: `body {\n  min-height: 100vh;\n  background-color: #f8f9fa;\n}`,
+                        tip: '<strong>Menos é mais.</strong> Como usamos Bootstrap, nosso CSS customizado é mínimo. O <code>#f8f9fa</code> é o cinza clarinho que o Bootstrap usa como <code>bg-light</code>.',
+                    },
+                    {
+                        icon: '&#10003;', title: 'CSS pronto!', file: '',
+                        color: 'var(--green)',
+                        body: 'Com o reset e o style.css, o visual base está sólido. Agora vamos dar vida à página com <strong>JavaScript</strong>!',
+                    },
+                ],
+            },
 
-const flowEl = document.getElementById('flow');
-const tabs = document.querySelectorAll('.method-tab');
-let current = 'LOAD';
+            // ═══════════════════════════════════════
+            // ETAPA 4 — GET (LISTAR)
+            // ═══════════════════════════════════════
+            GET: {
+                intro: 'A primeira funcionalidade: <strong>buscar os usuários na API e exibi-los como cards</strong>. Começamos pelo mais simples e construímos a base para tudo que vem depois.',
+                steps: [
+                    {
+                        icon: '&#128161;', title: 'O plano', file: '',
+                        color: 'var(--accent)',
+                        body: 'Precisamos de 3 coisas: (1) uma função que faça <code>GET</code> na API, (2) uma função que transforme os dados em cards HTML, e (3) um gatilho que chame tudo quando a página carregar.',
+                    },
+                    {
+                        icon: '&#8644;', title: 'Crie read.js — buscar dados', file: 'scripts/api/read.js',
+                        color: 'var(--orange)',
+                        body: 'Este é o arquivo mais simples da camada de API. Faz um <code>fetch</code> GET (método padrão), converte para JSON e retorna a lista de usuários.',
+                        detail: `export async function getUsers(apiUrl) {\n  const response = await fetch(apiUrl);\n  const data = await response.json();\n\n  if (!response.ok) {\n    throw new Error(\n      data.error || 'Failed to fetch users'\n    );\n  }\n\n  return data.users;\n}`,
+                        tip: '<strong>export</strong> torna a função disponível para outros arquivos importarem. <strong>async/await</strong> permite escrever código assíncrono de forma legível. <strong>response.ok</strong> é <code>true</code> se o status HTTP for 200-299.',
+                    },
+                    {
+                        icon: '&#9776;', title: 'Crie render.js — exibir cards', file: 'scripts/dom/render.js',
+                        color: 'var(--orange)',
+                        body: 'Este arquivo cuida da parte visual. Importa <code>getUsers</code>, busca os dados e cria um card Bootstrap para cada usuário. Também mantém um <strong>cache</strong> da lista.',
+                        detail: `import { getUsers } from '../api/read.js';\n\nlet usersCache = [];\n\nexport function findUserById(id) {\n  return usersCache.find(\n    (user) => user.id === id\n  );\n}\n\nexport async function renderUsers(apiUrl) {\n  const users = await getUsers(apiUrl);\n  usersCache = users;\n\n  const usersSection =\n    document.getElementById('users');\n\n  if (users.length === 0) {\n    usersSection.innerHTML =\n      '<p class="text-muted">No users found.</p>';\n    return;\n  }\n\n  usersSection.innerHTML = '';\n\n  users.forEach((user) => {\n    const userDiv = document.createElement('div');\n    userDiv.classList.add('col-md-3');\n\n    userDiv.innerHTML = ${bt}\n      <div class="card user-card h-100"\n           id="\${user.id}">\n        <div class="card-body">\n          <h5 class="card-title">\n            \${user.name}\n          </h5>\n          <p class="card-text mb-1">\n            <strong>Age:</strong> \${user.age}\n          </p>\n          <p class="card-text">\n            <strong>Email:</strong> \${user.email}\n          </p>\n        </div>\n        <div class="card-footer d-flex gap-2">\n          <button data-action="edit">Edit</button>\n          <button data-action="delete">Delete</button>\n        </div>\n      </div>\n    ${bt};\n\n    usersSection.appendChild(userDiv);\n  });\n}`,
+                    },
+                    {
+                        icon: '&#128161;', title: 'Entenda o usersCache', file: 'render.js',
+                        color: 'var(--yellow)',
+                        body: 'O <code>usersCache</code> guarda a última lista buscada. A função <code>findUserById()</code> faz lookup local — sem precisar chamar a API de novo. Será usada na edição e deleção.',
+                        tip: '<strong>data-action="edit"</strong> e <strong>data-action="delete"</strong> nos botões são atributos customizados. Vamos usá-los mais tarde para detectar qual botão foi clicado via <strong>delegação de eventos</strong>.',
+                    },
+                    {
+                        icon: '&#9733;', title: 'Primeira parte do app.js', file: 'app.js',
+                        color: 'var(--orange)',
+                        body: 'Agora conectamos tudo. Por enquanto, o <code>app.js</code> só precisa importar <code>renderUsers</code> e chamar quando a página carregar. <strong>Não escreva o arquivo inteiro ainda</strong> — vamos adicionar aos poucos.',
+                        detail: `import { renderUsers } from\n  './scripts/dom/render.js';\n\nconst apiUrl =\n  'http://localhost:8000/api/users';\n\n// Quando o DOM estiver pronto, renderiza\ndocument.addEventListener(\n  'DOMContentLoaded',\n  () => renderUsers(apiUrl)\n);`,
+                        tip: '<strong>DOMContentLoaded</strong> dispara quando o HTML foi parseado (sem esperar imagens/CSS). É o momento seguro para manipular o DOM.',
+                    },
+                    {
+                        icon: '&#10003;', title: 'Teste no navegador!', file: '',
+                        color: 'var(--green)',
+                        body: 'Abra o <code>index.html</code> (com a API PHP rodando). Você deve ver os cards dos usuários! Abra o <strong>DevTools > Network</strong> e veja a requisição GET acontecendo.',
+                        response: { status: 'Listagem funcionando', body: '┌─────────────┐  ┌─────────────┐\n│  João        │  │  Ana         │\n│  Age: 25     │  │  Age: 30     │\n│  joao@...    │  │  ana@...     │\n│ [Edit][Del]  │  │ [Edit][Del]  │\n└─────────────┘  └─────────────┘\n\n(botões ainda não funcionam)' },
+                    },
+                ],
+            },
 
-function render(method) {
-  const steps = flows[method];
-  flowEl.innerHTML = '';
+            // ═══════════════════════════════════════
+            // ETAPA 5 — POST (CRIAR)
+            // ═══════════════════════════════════════
+            POST: {
+                intro: 'Agora vamos fazer o formulário <strong>criar usuários novos</strong>. Envolve capturar o submit, enviar POST para a API e atualizar a lista.',
+                steps: [
+                    {
+                        icon: '&#8644;', title: 'Crie create.js — enviar dados', file: 'scripts/api/create.js',
+                        color: 'var(--orange)',
+                        body: 'Similar ao <code>read.js</code>, mas agora usamos o método <code>POST</code> com um corpo JSON. Note a conversão de <code>age</code> para <code>Number</code>.',
+                        detail: `export async function createUser(\n  apiUrl, { name, age, email }\n) {\n  const response = await fetch(apiUrl, {\n    method: 'POST',\n    headers: {\n      'Content-Type': 'application/json'\n    },\n    body: JSON.stringify({\n      name,\n      age: Number(age),\n      email\n    }),\n  });\n\n  const data = await response.json();\n\n  if (!response.ok) {\n    throw new Error(\n      data.error || 'Failed to create user'\n    );\n  }\n\n  return data;\n}`,
+                        tip: '<strong>Por que <code>Number(age)</code>?</strong> Os inputs HTML sempre retornam strings. A API espera um número para <code>age</code>, então convertemos antes de enviar.',
+                    },
+                    {
+                        icon: '&#128161;', title: 'Entenda o padrão de erro', file: '',
+                        color: 'var(--yellow)',
+                        body: 'Todos os arquivos da camada API seguem o mesmo padrão: se <code>response.ok</code> for <code>false</code>, jogam um <code>throw new Error()</code>. Isso permite que o <code>app.js</code> use <code>try/catch</code> para exibir mensagens ao usuário.',
+                        tip: 'A API PHP retorna <code>{"error": "mensagem"}</code> quando algo dá errado. O <code>data.error</code> extrai essa mensagem.',
+                    },
+                    {
+                        icon: '&#9881;', title: 'Funções de erro no app.js', file: 'app.js',
+                        color: 'var(--orange)',
+                        body: 'Adicione duas funções auxiliares para mostrar/esconder o alerta de erro do Bootstrap que criamos no HTML.',
+                        detail: `// Adicione ao app.js:\n\nconst formError =\n  document.getElementById('form-error');\n\nfunction showError(message) {\n  formError.textContent = message;\n  formError.classList.remove('d-none');\n}\n\nfunction hideError() {\n  formError.classList.add('d-none');\n  formError.textContent = '';\n}`,
+                        tip: 'A classe <code>d-none</code> do Bootstrap é <code>display: none</code>. Removê-la mostra o elemento, adicioná-la esconde.',
+                    },
+                    {
+                        icon: '&#9998;', title: 'Handler do formulário', file: 'app.js',
+                        color: 'var(--orange)',
+                        body: 'Adicione o import de <code>createUser</code> e o listener de submit. Por enquanto, <strong>só tratamos o caso de criação</strong> (quando <code>editingId</code> é <code>null</code>).',
+                        detail: `// Adicione ao topo do app.js:\nimport { createUser } from\n  './scripts/api/create.js';\n\n// Adicione as referências do DOM:\nconst form =\n  document.getElementById('create-user-form');\n\n// Adicione o listener:\nform.addEventListener('submit',\n  async (event) => {\n    event.preventDefault();\n\n    const name =\n      document.getElementById('name').value;\n    const age =\n      document.getElementById('age').value;\n    const email =\n      document.getElementById('email').value;\n\n    hideError();\n\n    try {\n      // Por enquanto, só criação:\n      await createUser(\n        apiUrl, { name, age, email }\n      );\n\n      form.reset();\n      renderUsers(apiUrl);\n    } catch (error) {\n      showError(error.message);\n    }\n  }\n);`,
+                        tip: '<strong>event.preventDefault()</strong> impede o comportamento padrão do form (recarregar a página). <strong>form.reset()</strong> limpa todos os inputs após sucesso.',
+                    },
+                    {
+                        icon: '&#10003;', title: 'Teste a criação!', file: '',
+                        color: 'var(--green)',
+                        body: 'Preencha o formulário e clique "Create". O novo card deve aparecer na lista! Tente enviar dados inválidos e veja o alerta de erro.',
+                        response: { status: 'Criação funcionando', body: 'Formulário: Ana, 30, ana@mail.com\n→ POST /api/users (201 Created)\n→ form.reset() limpa os campos\n→ renderUsers() atualiza a lista\n→ Novo card aparece!' },
+                    },
+                ],
+            },
 
-  steps.forEach((s, i) => {
-    if (i > 0) {
-      const arrow = document.createElement('div');
-      arrow.className = 'arrow';
-      arrow.innerHTML = '&#9660;';
-      flowEl.appendChild(arrow);
-    }
+            // ═══════════════════════════════════════
+            // ETAPA 6 — DELETE (DELETAR)
+            // ═══════════════════════════════════════
+            DELETE: {
+                intro: 'Antes da edição (que é mais complexa), vamos implementar o <strong>Delete</strong> — e de quebra aprender <strong>delegação de eventos</strong>.',
+                steps: [
+                    {
+                        icon: '&#128161;', title: 'O que é delegação de eventos?', file: '',
+                        color: 'var(--accent)',
+                        body: 'Os cards são criados <strong>dinamicamente</strong> pelo JS. Se adicionarmos listeners direto nos botões, eles se perdem quando a lista é re-renderizada. A solução: escutar no <strong>pai fixo</strong> (<code>#users</code>) e verificar qual filho foi clicado.',
+                        tip: 'Quando você clica num botão dentro de <code>#users</code>, o evento "borbulha" (bubble) até o pai. Usamos <code>event.target.dataset.action</code> para saber se foi o botão Edit ou Delete.',
+                    },
+                    {
+                        icon: '&#8644;', title: 'Crie delete.js', file: 'scripts/api/delete.js',
+                        color: 'var(--orange)',
+                        body: 'Envia <code>DELETE</code> com o <code>id</code> no query string. Note que <strong>não tem body</strong> — o id vai na URL.',
+                        detail: `export async function deleteUser(apiUrl, id) {\n  const response = await fetch(\n    ${bt}\${apiUrl}?id=\${id}${bt},\n    { method: 'DELETE' }\n  );\n\n  const data = await response.json();\n\n  if (!response.ok) {\n    throw new Error(\n      data.error || 'Failed to delete user'\n    );\n  }\n\n  return data;\n}`,
+                    },
+                    {
+                        icon: '&#9733;', title: 'Função auxiliar: getUserFromCard', file: 'app.js',
+                        color: 'var(--orange)',
+                        body: 'Adicione esta função que, dado um botão clicado, encontra o card pai e retorna os dados do usuário via cache.',
+                        detail: `// Adicione os imports ao topo:\nimport { renderUsers, findUserById } from\n  './scripts/dom/render.js';\nimport { deleteUser } from\n  './scripts/api/delete.js';\n\n// Função auxiliar:\nfunction getUserFromCard(button) {\n  const card = button.closest('.user-card');\n  return findUserById(Number(card.id));\n}`,
+                        tip: '<strong>.closest()</strong> sobe na árvore DOM até encontrar o ancestral que bate com o seletor. Aqui, encontra o card que contém o botão clicado.',
+                    },
+                    {
+                        icon: '&#9881;', title: 'Listener com delegação', file: 'app.js',
+                        color: 'var(--orange)',
+                        body: 'Adicione o listener no container <code>#users</code>. Quando detectar <code>data-action="delete"</code>, pede confirmação e chama a API.',
+                        detail: `const usersSection =\n  document.getElementById('users');\n\nusersSection.addEventListener('click',\n  async (event) => {\n    const { target } = event;\n\n    if (target.dataset.action === 'delete') {\n      const user = getUserFromCard(target);\n\n      if (!confirm(\n        'Are you sure you want to '\n        + 'delete this user?'\n      )) return;\n\n      try {\n        await deleteUser(apiUrl, user.id);\n        renderUsers(apiUrl);\n      } catch (error) {\n        showError(error.message);\n      }\n    }\n  }\n);`,
+                        tip: '<strong>confirm()</strong> abre um diálogo nativo do navegador. Retorna <code>true</code> se o usuário clicar OK, <code>false</code> se clicar Cancelar. É simples mas eficaz para evitar deleções acidentais.',
+                    },
+                    {
+                        icon: '&#10003;', title: 'Teste a deleção!', file: '',
+                        color: 'var(--green)',
+                        body: 'Clique "Delete" num card. O diálogo de confirmação aparece. Confirme e o card some. A lista é atualizada automaticamente.',
+                        response: { status: 'Deleção funcionando', body: 'Clique em "Delete" no card do João\n→ confirm("Are you sure...?")\n→ DELETE /api/users?id=1\n→ renderUsers() reconstrói a lista\n→ Card do João sumiu!' },
+                    },
+                ],
+            },
 
-    const div = document.createElement('div');
-    div.className = 'step';
-    div.style.transitionDelay = `${i * 70}ms`;
+            // ═══════════════════════════════════════
+            // ETAPA 7 — EDIT (PUT + PATCH)
+            // ═══════════════════════════════════════
+            EDIT: {
+                intro: 'A funcionalidade mais complexa: <strong>editar um usuário</strong>. Envolve modo de edição, detecção de mudanças e escolha inteligente entre <strong>PUT</strong> e <strong>PATCH</strong>.',
+                steps: [
+                    {
+                        icon: '&#128161;', title: 'PUT vs PATCH — qual a diferença?', file: '',
+                        color: 'var(--accent)',
+                        body: '<strong>PUT</strong> substitui o recurso inteiro — você envia <strong>todos</strong> os campos. <strong>PATCH</strong> atualiza parcialmente — você envia <strong>só o que mudou</strong>. Nosso frontend é inteligente: detecta o que mudou e escolhe o método certo.',
+                        tip: 'Se o usuário mudou só o email, não faz sentido enviar nome e idade de novo. O PATCH é mais eficiente e semântico nesse caso.',
+                    },
+                    {
+                        icon: '&#8644;', title: 'Crie update.js — duas funções', file: 'scripts/api/update.js',
+                        color: 'var(--orange)',
+                        body: 'Este arquivo exporta <strong>duas funções</strong>: <code>updateUser</code> (PUT, todos os campos) e <code>patchUser</code> (PATCH, campos parciais).',
+                        detail: `// PUT — substituição completa\nexport async function updateUser(\n  apiUrl, id, { name, age, email }\n) {\n  const response = await fetch(\n    ${bt}\${apiUrl}?id=\${id}${bt}, {\n      method: 'PUT',\n      headers: {\n        'Content-Type': 'application/json'\n      },\n      body: JSON.stringify({\n        name,\n        age: Number(age),\n        email\n      }),\n    }\n  );\n\n  const data = await response.json();\n\n  if (!response.ok) {\n    throw new Error(\n      data.error || 'Failed to update user'\n    );\n  }\n\n  return data;\n}\n\n// PATCH — atualização parcial\nexport async function patchUser(\n  apiUrl, id, fields\n) {\n  if (fields.age !== undefined) {\n    fields.age = Number(fields.age);\n  }\n\n  const response = await fetch(\n    ${bt}\${apiUrl}?id=\${id}${bt}, {\n      method: 'PATCH',\n      headers: {\n        'Content-Type': 'application/json'\n      },\n      body: JSON.stringify(fields),\n    }\n  );\n\n  const data = await response.json();\n\n  if (!response.ok) {\n    throw new Error(\n      data.error || 'Failed to patch user'\n    );\n  }\n\n  return data;\n}`,
+                        tip: 'Note que <code>patchUser</code> recebe um objeto genérico <code>fields</code> — pode ter 1, 2 ou 3 campos. A conversão de <code>age</code> só acontece se ele existir.',
+                    },
+                    {
+                        icon: '&#9881;', title: 'Estado de edição no app.js', file: 'app.js',
+                        color: 'var(--orange)',
+                        body: 'Adicione os imports e as variáveis de estado. O <code>editingId</code> controla se estamos no modo criação ou edição. O <code>originalUser</code> guarda o estado antes da edição para comparação.',
+                        detail: `// Adicione ao topo do app.js:\nimport { updateUser, patchUser } from\n  './scripts/api/update.js';\n\n// Referências do DOM:\nconst formTitle =\n  document.getElementById('form-title');\nconst submitBtn =\n  form.querySelector('button[type="submit"]');\nconst cancelBtn =\n  document.getElementById('cancel-edit');\n\n// Estado de edição:\nlet editingId = null;\nlet originalUser = null;`,
+                    },
+                    {
+                        icon: '&#9998;', title: 'enterEditMode() — entrar na edição', file: 'app.js',
+                        color: 'var(--orange)',
+                        body: 'Quando o usuário clica "Edit", preenchemos o formulário com os dados atuais, trocamos o título e o texto do botão, e mostramos o botão "Cancel".',
+                        detail: `function enterEditMode(user) {\n  editingId = user.id;\n  originalUser = { ...user };\n\n  // Preenche o formulário:\n  document.getElementById('name').value\n    = user.name;\n  document.getElementById('age').value\n    = user.age;\n  document.getElementById('email').value\n    = user.email;\n\n  // Muda a interface:\n  formTitle.textContent = 'Edit User';\n  submitBtn.textContent = 'Update';\n  cancelBtn.style.display = '';\n\n  // Foca no primeiro campo:\n  document.getElementById('name').focus();\n}`,
+                        tip: '<strong>{ ...user }</strong> cria uma cópia do objeto. Sem isso, alterar o form mudaria o objeto original e não conseguiríamos comparar o que mudou.',
+                    },
+                    {
+                        icon: '&#9638;', title: 'exitEditMode() — sair da edição', file: 'app.js',
+                        color: 'var(--orange)',
+                        body: 'Reseta tudo: limpa o estado, volta o título para "Create User", esconde o botão Cancel e limpa o formulário.',
+                        detail: `function exitEditMode() {\n  editingId = null;\n  originalUser = null;\n  formTitle.textContent = 'Create User';\n  submitBtn.textContent = 'Create';\n  cancelBtn.style.display = 'none';\n  form.reset();\n}\n\n// Conecte o botão Cancel:\ncancelBtn.addEventListener(\n  'click', exitEditMode\n);`,
+                    },
+                    {
+                        icon: '&#8644;', title: 'Conecte o botão Edit via delegação', file: 'app.js',
+                        color: 'var(--orange)',
+                        body: 'Adicione a detecção de <code>data-action="edit"</code> no listener de delegação que já existe no <code>#users</code>.',
+                        detail: `// No listener que já criamos no passo\n// anterior (DELETE), adicione ANTES\n// do bloco de delete:\n\nusersSection.addEventListener('click',\n  async (event) => {\n    const { target } = event;\n\n    // ← Adicione isso:\n    if (target.dataset.action === 'edit') {\n      enterEditMode(getUserFromCard(target));\n    }\n\n    if (target.dataset.action === 'delete') {\n      // ... código que já existe\n    }\n  }\n);`,
+                    },
+                    {
+                        icon: '&#10004;', title: 'Lógica inteligente no submit', file: 'app.js',
+                        color: 'var(--orange)',
+                        body: 'Agora modifique o handler de submit para <strong>detectar se estamos editando</strong>. Se sim, compara campo por campo com o original e decide entre PUT e PATCH.',
+                        detail: `// Substitua o conteúdo do try/catch\n// no listener de submit:\n\ntry {\n  if (editingId !== null) {\n    // === MODO EDIÇÃO ===\n\n    // Descobre o que mudou:\n    const changed = {};\n    if (name !== originalUser.name)\n      changed.name = name;\n    if (Number(age) !== originalUser.age)\n      changed.age = age;\n    if (email !== originalUser.email)\n      changed.email = email;\n\n    // Nada mudou? Sai da edição.\n    if (Object.keys(changed).length === 0) {\n      exitEditMode();\n      return;\n    }\n\n    // Todos mudaram → PUT (completo)\n    // Alguns mudaram → PATCH (parcial)\n    const allChanged =\n      Object.keys(changed).length === 3;\n\n    if (allChanged) {\n      await updateUser(\n        apiUrl, editingId,\n        { name, age, email }\n      );\n    } else {\n      await patchUser(\n        apiUrl, editingId, changed\n      );\n    }\n  } else {\n    // === MODO CRIAÇÃO ===\n    await createUser(\n      apiUrl, { name, age, email }\n    );\n  }\n\n  exitEditMode();\n  renderUsers(apiUrl);\n} catch (error) {\n  showError(error.message);\n}`,
+                        tip: '<strong>Resumo da lógica:</strong> 0 campos mudaram → fecha edição. 1-2 campos mudaram → PATCH. 3 campos mudaram → PUT. Simples e eficiente!',
+                    },
+                    {
+                        icon: '&#9881;', title: 'Detalhe: limpar edição ao deletar', file: 'app.js',
+                        color: 'var(--yellow)',
+                        body: 'Um caso edge: se o usuário está <strong>editando</strong> o João e clica <strong>Delete</strong> no card do João, precisamos sair do modo edição. Adicione essa verificação no handler de delete.',
+                        detail: `// Dentro do bloco de delete:\ntry {\n  await deleteUser(apiUrl, user.id);\n\n  // ← Adicione esta verificação:\n  if (editingId === user.id)\n    exitEditMode();\n\n  renderUsers(apiUrl);\n} catch (error) {\n  showError(error.message);\n}`,
+                    },
+                    {
+                        icon: '&#10003;', title: 'Frontend completo!', file: '',
+                        color: 'var(--green)',
+                        body: 'Todas as operações CRUD estão funcionando! Teste: (1) edite só o email → veja PATCH no DevTools. (2) edite tudo → veja PUT. (3) clique Edit e depois Cancel. (4) delete um usuário que está sendo editado.',
+                        response: { status: 'CRUD Completo!', body: 'Funcionalidades implementadas:\n\n✓ Listar usuários (GET)\n✓ Criar usuário (POST)\n✓ Deletar com confirmação (DELETE)\n✓ Editar com PUT ou PATCH inteligente\n✓ Tratamento de erros\n✓ Modo edição com Cancel\n\nArquivos criados:\n  src/index.html\n  src/app.js\n  src/styles/reset.css\n  src/styles/style.css\n  src/scripts/api/read.js\n  src/scripts/api/create.js\n  src/scripts/api/update.js\n  src/scripts/api/delete.js\n  src/scripts/dom/render.js' },
+                    },
+                ],
+            },
+        };
 
-    let inner = `
+        const flowEl = document.getElementById('flow');
+        const introEl = document.getElementById('intro');
+        const tabs = document.querySelectorAll('.method-tab');
+        let current = 'SETUP';
+
+        function render(method) {
+            const flow = flows[method];
+            const steps = flow.steps;
+
+            introEl.innerHTML = flow.intro || '';
+            flowEl.innerHTML = '';
+
+            steps.forEach((s, i) => {
+                if (i > 0) {
+                    const arrow = document.createElement('div');
+                    arrow.className = 'arrow';
+                    arrow.innerHTML = '&#9660;';
+                    flowEl.appendChild(arrow);
+                }
+
+                const div = document.createElement('div');
+                div.className = 'step';
+                div.style.transitionDelay = `${i * 70}ms`;
+
+                let inner = `
       <div class="step-card" style="--step-color:${s.color}">
+        <div class="step-number">${i + 1}</div>
         <div class="step-header">
           <div class="step-icon">${s.icon}</div>
           <div class="step-title">${s.title}</div>
@@ -416,56 +843,62 @@ function render(method) {
         </div>
         <div class="step-body">${s.body}</div>`;
 
-    if (s.detail) {
-      const uid = `detail-${method}-${i}`;
-      inner += `
+                if (s.detail) {
+                    const uid = `detail-${method}-${i}`;
+                    inner += `
         <div class="toggle-detail" onclick="toggleDetail('${uid}',this)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 5l7 7-7 7"/></svg>
           ver código
         </div>
         <div class="step-detail" id="${uid}"><span style="color:var(--muted)">${escHtml(s.detail)}</span></div>`;
-    }
+                }
 
-    if (s.response) {
-      inner += `
+                if (s.tip) {
+                    inner += `<div class="tip-box">${s.tip}</div>`;
+                }
+
+                if (s.response) {
+                    inner += `
         <div class="response-box">
           <div class="status">${s.response.status}</div>
           <pre>${escHtml(s.response.body)}</pre>
         </div>`;
-    }
+                }
 
-    inner += '</div>';
-    div.innerHTML = inner;
-    flowEl.appendChild(div);
-  });
+                inner += '</div>';
+                div.innerHTML = inner;
+                flowEl.appendChild(div);
+            });
 
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      document.querySelectorAll('.step').forEach(el => el.classList.add('visible'));
-    });
-  });
-}
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    document.querySelectorAll('.step').forEach(el => el.classList.add('visible'));
+                });
+            });
+        }
 
-function toggleDetail(id, btn) {
-  const el = document.getElementById(id);
-  el.classList.toggle('open');
-  btn.classList.toggle('open');
-}
+        function toggleDetail(id, btn) {
+            const el = document.getElementById(id);
+            el.classList.toggle('open');
+            btn.classList.toggle('open');
+        }
 
-function escHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+        function escHtml(s) {
+            return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
 
-tabs.forEach(tab => {
-  tab.addEventListener('click', () => {
-    tabs.forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    current = tab.dataset.method;
-    render(current);
-  });
-});
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                current = tab.dataset.method;
+                render(current);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        });
 
-render('LOAD');
-</script>
+        render('SETUP');
+    </script>
 </body>
+
 </html>
